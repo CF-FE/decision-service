@@ -40,3 +40,9 @@
 ## 当前交付边界
 
 只有仓库、文档、看板与规划。没有声称模型准确率、生产 SLA、部署健康或业务验收完成。公开材料已去除凭据、个人信息、内部网络/连接细节和私有来源内容。
+
+## Hindsight webhook 与反馈回收补充（2026-11-08）
+
+用户确认当前部署支持 webhook；这是部署能力说明，不是本项目端到端验证。调研覆盖官方 Webhooks、Documents、Bank strategy、Knowledge Pages、Mental Models、Decision Models 与 Extensions；链接、合同差异及设计取舍见[结果回收方案](outcome-feedback.md)。
+
+当前 MCP 能精确读取文档原文，未暴露 webhook 管理及 Documents API 的时间窗口过滤；官方存在这些能力不代表当前适配已具备。上线前必须验证签名、至少一次投递去重、重试耗尽恢复、并发分页覆盖、不可变修订和所有路由的项目读写隔离。原生删除事件覆盖尚未核验，撤回不能只依赖回调。当前新增交付仍只有文档，没有配置 webhook、开放跨项目访问、写入运行结果或执行自动评价。

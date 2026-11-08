@@ -49,10 +49,14 @@
 
 - evaluate_decision：返回建议，不派发、不改业务。
 - get_decision：查询原结果、证据与版本。
-- record_decision_outcome：后续阶段增加，需验证反馈来源，只记录实际采纳与已核实结果。
+- record_decision_outcome：后续阶段的可选适配入口，不要求项目双写。优先从项目 bank 的原生 webhook 回收标准化 outcome；所有入口共享来源、版本与幂等校验。
 
 工具名为提案，不代表已经存在。MVP 不暴露任意 Hindsight 管理/删除工具、shell、Herdr socket 或无限制 URL 抓取。
 
 ## 既有系统边界
 
 Herdr 继续负责协调、执行检查点和现有审批状态；Task Mailbox 继续负责持久传输、事件及版本；项目原件负责业务事实与验收。公共决策服务没有批准账本的权威地位。业务推进权限不得从历史记忆、Issue/评论或模型答案推导。
+
+## 异步结果回收扩展
+
+项目 bank 保管结果原文；原生 webhook 通知服务，持久 inbox 去重后精确读取文档，关联原 decision，形成独立评价。补偿扫描不依赖语义 recall。详细合同、权限与验收见[决策结果回收与验证方案](outcome-feedback.md)。服务处理账本仅保存必要处理与评价证据，不成为第二套业务/审批数据库。

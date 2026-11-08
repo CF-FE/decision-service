@@ -8,6 +8,7 @@
 - [讨论与决策记录](docs/discussion-record.md)
 - [总体架构与接口草案](docs/architecture.md)
 - [Hindsight 集成与经验闭环](docs/hindsight-integration.md)
+- [决策结果回收与验证方案](docs/outcome-feedback.md)
 - [部署、安全与故障边界](docs/deployment.md)
 - [阶段路线图与验收](docs/roadmap.md)
 - [ADR-001：独立公共服务与接入层](docs/decisions/001-shared-decision-service.md)

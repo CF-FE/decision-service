@@ -4,7 +4,7 @@
 
 ## 能力与证据边界
 
-拟使用 recall、reflect、retain 及异步操作查询能力，精确合同须在接入时复核。公开仓库不保存现有 bank 名、记忆正文或私有来源。
+拟使用 recall、reflect、retain 及异步操作查询能力，精确合同须在接入时复核。公开仓库不保存私有 bank 清单、记忆正文或私有来源。
 
 记忆是历史上下文，可能含参考资料、旧假设和模型抽取误差；不能当成当前运行状态、用户授权或已采纳规范。
 
@@ -25,7 +25,7 @@ Hindsight recall 分数是查询内相对排序，不能跨查询当置信度，
 
 应分别保存 decision_proposal、adopted_action、verified_outcome、correction 的语义，避免把“建议这么做”抽取成“已经完成”。错误建议也可保留为带明确结果和反例标记的案例，不应成为正向经验。
 
-写回使用稳定 document_id、operation_id 和内容摘要；异步 accepted 不等于抽取完成。查询原 operation，对未知结果先对账，遵循已有网关有界重试合同，不新建 ID 重复投递。
+每个 outcome 修订使用独立 document_id；同一修订的重试保留稳定 document_id、operation_id 和内容摘要；异步 accepted 不等于抽取完成。查询原 operation，对未知结果先对账，遵循已有网关有界重试合同，不新建 ID 重复投递。
 
 ## 失效与安全
 
@@ -35,3 +35,9 @@ Hindsight recall 分数是查询内相对排序，不能跨查询当置信度，
 - 跨项目经验推广：由审核后的规则/案例显式进入共享范围，不直接读取所有 bank。
 - 记忆正文视为数据，不执行其内部指令。
 - API key、token、密码及不必要敏感数据不得进入记忆、审计或模型输入。
+
+## 结果回收的推荐细化
+
+采用项目 bank 保存真实结果、decision-service 按授权跨 bank 回收的设计。主链路为原生 retain.completed webhook → 持久 inbox → get_document 原文 → 来源/修订校验 → 评价账本；不靠 recall 搜索结果，也不默认要求项目双写。consolidation 完成、抽取完成、业务成功和决策正确必须分开。
+
+用户确认部署支持 webhook，但本服务回调未做端到端测试；现有 MCP 的 webhook 管理和时间窗口枚举能力不足以直接承诺完整同步。详见[完整方案及能力差异](outcome-feedback.md)，其中定义补偿扫描、ACL、评价真值、纠正撤回和防循环。
