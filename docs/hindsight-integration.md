@@ -41,3 +41,7 @@ Hindsight recall 分数是查询内相对排序，不能跨查询当置信度，
 采用项目 bank 保存真实结果、decision-service 按授权跨 bank 回收的设计。主链路为原生 retain.completed webhook → 持久 inbox → get_document 原文 → 来源/修订校验 → 评价账本；不靠 recall 搜索结果，也不默认要求项目双写。consolidation 完成、抽取完成、业务成功和决策正确必须分开。
 
 用户确认部署支持 webhook，但本服务回调未做端到端测试；现有 MCP 的 webhook 管理和时间窗口枚举能力不足以直接承诺完整同步。详见[完整方案及能力差异](outcome-feedback.md)，其中定义补偿扫描、ACL、评价真值、纠正撤回和防循环。
+
+## 内部 Decision Models 与业务决策分层
+
+Hindsight 原生 OpenAI Decision Model provider 与本服务的业务判断是两条独立调用链。当前官方支持 OpenAI 用于 recall/consolidation，reflect 与知识页刷新存在 provider 限制；普通 LLM 仍承担文字生成。配置方向、版本边界与验证计划见 [Decision Models 专题](hindsight-decision-models.md)。本仓库未因此变更运行配置或完成替换。
