@@ -2,7 +2,7 @@
 
 跨项目、跨 Agent 与工作流复用的快速决策服务，通过 OpenAI Decisions API 和 Hindsight 跨 bank 检索，为动态工作流选择推进/调整方案，并按任务需求与复杂度选择角色使用的模型及推理强度。
 
-> 当前阶段：云端服务与 Mac 消费者已部署（2026-11-09），真实 Luna 判断及 Herdr 独立工程闭环通过。服务全量基线 54 项、后续插件专项 8 项通过；Herdr 359 项通过、4 项既有条件跳过。云端 Decision Service Cloud 与本地插件均已 OAuth 连接，云端 Skill 的显式加载和只读查询也已确认。真实跨 bank 尚未通过：Luna 精排拒答后，Q8 备选试验只恢复一库，另一库及最终判断超时；试验结束已恢复原 Luna 召回配置。三个实现会话负责编码，两个原会话只审计复核。工程回执不等于自然业务验收或效率收益证明。
+> 当前阶段：云端服务与 Mac 消费者已部署（2026-11-09），真实 Luna 判断及 Herdr 独立工程闭环通过。云端 Decision Service Cloud 与本地插件均已 OAuth 连接，云端 Skill 的显式加载和只读查询已确认。Win Hindsight 已应用候选拒答补丁，继续用 Luna；原 45 秒预算下，一次真实双 bank evaluate 在 14.873 秒完成，两库均返回片段，最终判断及同记录读回通过。服务基线 54 项、后续插件专项 8 项、拒答专项 14 项通过；Herdr 359 项通过、4 项既有条件跳过。原两会话只审计复核，实现与部署由执行会话及临时子代理完成。详见 [Issue #6](https://github.com/CF-FE/decision-service/issues/6) 和[运行证据](docs/evidence-and-open-questions.md#luna-局部拒答补丁与真实验证2026-11-09)；一次工程验证不等于自然业务验收或长期效率收益。
 
 - [GitHub Project #7](https://github.com/orgs/CF-FE/projects/7)
 - [讨论与决策记录](docs/discussion-record.md)

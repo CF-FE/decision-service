@@ -18,7 +18,7 @@ MVP 使用服务本地记录与原端恢复补传；Hindsight webhook、全库�
 
 首版由调用方显式指定 bank，或使用来源项目的 default_banks 映射；没有映射就跳过检索，不增加模型选库回合、不扫描全部可读 bank。映射可包含已获准的本项目、共享及相关项目 bank。获准范围内允许直接读取其他 bank，无需先复制到共享 bank，也不要求逐条经验审批。
 
-读取结果保留 bank、document/source ID、可得来源时间及适用项目；来自其他项目的经验仍需结合当前事实判断适用性。读权限不自动成为写入或删除权限。真实接入使用仅限两目标 bank、无 mutation 的服务主体。Luna 精排曾因拒答返回 500；获准的 Q8 备选试验只恢复一库，另一库及最终判断超时，完整跨库链路仍未通过。试验结束已恢复原 Luna 召回配置，具体范围和结果见[试验记录](evidence-and-open-questions.md#q8-备选试验与恢复2026-11-09)。
+读取结果保留 bank、document/source ID、可得来源时间及适用项目；来自其他项目的经验仍需结合当前事实判断适用性。读权限不自动成为写入或删除权限。真实接入使用仅限两目标 bank、无 mutation 的服务主体。历史上 Luna 精排曾因拒答返回 500；随后获准的 Q8 备选试验只有一库返回，另一库及最终判断超时，该次试验未通过，结束后已恢复原 Luna 配置，见[试验记录](evidence-and-open-questions.md#q8-备选试验与恢复2026-11-09)。当前已应用 Luna 候选拒答补丁，原 45 秒预算下的一次真实双库检索、最终判断与同记录读回通过，见[最新验证](evidence-and-open-questions.md#luna-局部拒答补丁与真实验证2026-11-09)。
 
 ## 能力与证据边界
 
@@ -68,6 +68,6 @@ MVP 优先由原 workflow/角色创建与执行适配器直传应用和结果事
 
 ## 内部 Decision Models 与业务决策分层
 
-Hindsight 原生 OpenAI Decision Model provider 与本服务的业务判断是两条独立调用链。当前官方支持 OpenAI 用于 recall/consolidation，reflect 与知识页刷新存在 provider 限制；普通 LLM 仍承担文字生成。配置方向、版本边界与验证计划见 [Decision Models 专题](hindsight-decision-models.md)。本仓库未因此变更运行配置或完成替换。
+Hindsight 原生 OpenAI Decision Model provider 与本服务的业务判断是两条独立调用链。当前官方支持 OpenAI 用于 recall/consolidation，reflect 与知识页刷新存在 provider 限制；普通 LLM 仍承担文字生成。Win 已按 [Issue #6](https://github.com/CF-FE/decision-service/issues/6) 应用候选级拒答补丁并继续用 Luna；两库检索、最终判断及同记录读回的一次真实验证通过。补丁在 Herdr 仓维护，本服务的 HTTP/MCP 合同没有改变；版本、拒答语义及证据边界见 [Decision Models 专题](hindsight-decision-models.md)。
 
 本服务为角色选择的执行模型/推理强度又是另一层：选择依据来自任务需求、宿主可用能力与相关经验，实际配置由角色创建者应用；不把选择结果写成 Hindsight 内部 provider 已改变，也不把历史模型表现当成当前宿主可用性。

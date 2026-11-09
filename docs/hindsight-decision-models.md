@@ -1,6 +1,16 @@
 # Hindsight Decision Models 与 OpenAI Decisions
 
-更新日期：2026-11-09。当前已恢复 2026-11-08 启用的 Luna 召回配置。11 月 9 日进行的 Q8 备选试验未通过完整双库与判断链路，试验后配置哈希已恢复原值、API 健康；Luna 精排拒答问题仍待解决。以下保留首次启用事实和本次试验范围，不声称业务质量或提速收益已验证。
+更新日期：2026-11-09。当前继续使用 Luna；Win Hindsight API Slim 1.2.0 已应用候选级拒答补丁，一次真实双库检索、最终判断及持久读回在原 45 秒预算下通过。此前 Q8 备选试验未通过完整链路，已恢复原配置。拒答触发原因仍未知，以下分别记录部署、工程验证和历史试验，不声称长期质量或效率收益已验证。
+
+## 2026-11-09：保留 Luna，跳过明确拒答候选
+
+安装版没有局部拒答跳过开关，原解析器遇到任一题 refusal 会让整次 recall 失败。现已采用 [Herdr 固定补丁 49e48b5c](https://github.com/CF-FE/herdr-4-codexcloud/commit/49e48b5c6a8a23d90d68a53dafbe9a37b680c6b3)：只在 OpenAI 候选排序路径保留明确拒答标记、排除该候选，再排名其余正常答案。正常零概率、全部拒答、缺答、非法答案和 HTTP 错误分别处理；其他 Decision Model 调用及去重题仍使用严格拒答行为。
+
+原有批量继续使用：同一 bank 的多个候选组成 questions，按容量拆批。当前 Win 配置的候选上限为 100；OpenAI 当前接口上限为每请求 1–400 问题，不能把 Hindsight 的通用拆批上限当作 OpenAI 限额。官方 response 的 refusal 只有 name/type，没有具体原因字段；“证据不足”“安全原因”“并发限流”均不是这次故障已确认的根因。
+
+15:29（Asia/Shanghai）完成 API 单独重载和源码/ACL/健康读回，原配置、PG/BGE 保留。唯一一次真实 evaluate 用时 14.873 秒，两 bank 各返回 3 个有 memory 引用的片段；最终 complete/suggested，原生 predicate probability=1.0，同 ID 读回一致。测试窗口中有 1/100 和 10/100 两条部分拒答告警，但不带 bank/request 标签，不能逐条归属。详见 [Issue #6](https://github.com/CF-FE/decision-service/issues/6) 和[完整证据边界](evidence-and-open-questions.md#luna-局部拒答补丁与真实验证2026-11-09)。
+
+上游 [Issue #6242](https://github.com/vectorize-io/hindsight/issues/6242) 已由 [PR #6389](https://github.com/vectorize-io/hindsight/pull/6389) 关闭。其新增选项默认关闭，启用后会在 Decision Model 失败时用配置的备用 reranker 从头重排。本轮固定安装版使用候选级补丁，保留 Luna 已给出的正常答案；没有启用整批备用重排或切换 Q8。
 
 ## 2026-11-09：Q8 备选验证与恢复
 
@@ -43,9 +53,9 @@ OpenAI 官方指南当前使用 `POST /v1/decisions`、`gpt-6-luna`，提供 pre
 
 2026-11-09 核对的 OpenAI 原生 `answers[]` 有 **predicate、choice、score、refusal** 四种返回类型。任一题可返回 `{"type":"refusal","name":"问题名"}`，其他题仍可有正常答案；未命名时 `name=null`。官方只定义拒答分支的 `name/type`，未给出原因字段或触发规则。完整字段、概率/评分语义、批量限制及 Decision Service 的规范化映射见[官方返回类型说明](provider-integration.md#openai-decisions-官方返回类型)。[5]
 
-安装版所对应的固定上游源码 `34a138684a899b6ec34175f7a2b633860466d289` 中，`_from_openai()` 遍历答案，遇到任一 refusal 就抛 `DecisionRefusedError`，没有返回已解析的正常答案。[6] 因此本次 recall 整体 500 是已确认的 **Hindsight 适配/排序链路传播行为**，不能表述为 OpenAI 要求整批失败。HTTP 错误、超时、明确拒答和合法低分必须分别诊断；当前证据仍不能确认拒答的原始原因或是否曾有限流。
+补丁前安装版所对应的固定上游源码 `34a138684a899b6ec34175f7a2b633860466d289` 中，`_from_openai()` 遍历答案，遇到任一 refusal 就抛 `DecisionRefusedError`，没有返回已解析的正常答案。[6] 因此此前 recall 整体 500 是已确认的 **Hindsight 适配/排序链路传播行为**，不能表述为 OpenAI 要求整批失败。HTTP 错误、超时、明确拒答和合法低分必须分别诊断；当前证据仍不能确认拒答的原始原因或是否曾有限流。
 
-[Issue #6](https://github.com/CF-FE/decision-service/issues/6) 跟踪的修复方向是在 **recall 排序责任边界** 显式保留拒答状态并排除对应候选，其余正常答案继续使用；全部拒答仍失败/未知，不伪造为零分或有效空结果。不能仅吞掉异常后让未评分候选继续获得名次分，也不改变 consolidation/reflect 的严格拒答语义。这是修复要求，不是已发布或已部署的能力。
+[Issue #6](https://github.com/CF-FE/decision-service/issues/6) 跟踪的修复是在 **recall 排序责任边界** 显式保留拒答状态并排除对应候选，其余正常答案继续使用；全部拒答仍失败/未知，不伪造为零分或有效空结果。不能仅吞掉异常后让未评分候选继续获得名次分，也不改变 consolidation/reflect 的严格拒答语义。该候选级补丁已于 2026-11-09 15:29（Asia/Shanghai）应用到 Win；源码版本、实际验证和局限见上方“保留 Luna，跳过明确拒答候选”。
 
 源码仍属 `vectorize-io/hindsight`；Win 补丁、部署和回退材料归 `CF-FE/herdr-4-codexcloud` 的 `mcp/hindsight-memory`，VPS 网关归 `ghyghoo8/create-network-sh`。本仓记录消费端现象、合同与验收，不复制 Hindsight 排序器。此文档补充不改变 provider、模型、并发、权限或运行配置。
 
