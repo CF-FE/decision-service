@@ -8,7 +8,7 @@
 
 | 优先级 | Issue | 当前状态 | 下一步与完成边界 |
 | --- | --- | --- | --- |
-| P1 | [#1 日常工作流与角色创建接入](https://github.com/CF-FE/decision-service/issues/1) | 凡人首件实际采用 `receipt_first` 与 `gpt-6.1-sol/high`，原报告和负责人 `revise` 的质量修订均已回收 | 首单核验受身份前置影响。新 e14 绑定通过普通入口的隔离联调、独立只读差异核验和负责人限定验收。 |
+| P1 | [#1 日常工作流与角色创建接入](https://github.com/CF-FE/decision-service/issues/1) | 凡人首件实际采用 `receipt_first` 与 `gpt-6.1-sol/high`，原报告和负责人 `revise` 的质量修订均已回收 | 首单核验受身份前置影响。后继通过隔离联调、独立只读核验和负责人限定验收。新单元普通入口已启用主分支受管绑定，见[当前部署](deployment.md)。 |
 | P2 | [#4 基于真实反馈优化决策与模型强度](https://github.com/CF-FE/decision-service/issues/4) | 凡人完成首轮复盘和后继核验。只读身份交接与收件分类已调整，原 `high` 配置保留。 | 继续从后续真实任务观察质量、返工和推进，附现成可比用量。 |
 | P3 | [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) | 凡人单 bank 生产回调已启用，一条真实历史结果完成回收、按 ID 补偿及重启读回 | 凡人新单元的原报告与质量修订在同一事件下均经签名 webhook 回收。其他 bank 和全库遗漏发现另行推进。 |
 
