@@ -1,6 +1,14 @@
 # Hindsight Decision Models 与 OpenAI Decisions
 
-核对日期：2026-11-08。状态：现有 Hindsight API Slim 1.2.0 已配置 OpenAI Decision Models，22:55（Asia/Shanghai）沿原入口重载后健康检查通过；一条不含项目数据的 Luna 样例通过。尚未验证真实业务召回、质量或提速收益。
+更新日期：2026-11-09。当前已恢复 2026-11-08 启用的 Luna 召回配置。11 月 9 日进行的 Q8 备选试验未通过完整双库与判断链路，试验后配置哈希已恢复原值、API 健康；Luna 精排拒答问题仍待解决。以下保留首次启用事实和本次试验范围，不声称业务质量或提速收益已验证。
+
+## 2026-11-09：Q8 备选验证与恢复
+
+真实跨库请求在 Hindsight 的 Decision Model 精排阶段遇到拒答，安装版将其传播为整次 recall 的 HTTP 500。接口没有受支持的请求级关闭精排参数；rerank 对象的 prune/dedup 不能替代该能力。
+
+公子批准仅为测试备选方案，将 `HINDSIGHT_API_RECALL_DECISION_MODEL_PROVIDER` 从 openai 改为 none，让 recall 使用已保留的 ONNX Q8。Q8 实际加载成功，但唯一一次双 bank 测试只有一库返回 35 条片段，另一库中继等待超时，最终判断为 unknown/openai_timeout；不能把加载成功当成备选通过。
+
+试验结束按同一回退路径恢复 recall=openai，配置文件与试验前逐字节一致。仅重载 API，PG/BGE 保留；清理没有追加召回或模型请求。业务 Decision Service、consolidation 和其他原配置保留。Q8 没有成为长期选型，详细耗时及证据边界见[交付记录](evidence-and-open-questions.md#q8-备选试验与恢复2026-11-09)。
 
 ## 结论与职责边界
 
@@ -31,7 +39,7 @@ Hindsight Decision Models 是可选的内部判断层：辅助筛选记忆、辨
 
 OpenAI 官方指南当前使用 `POST /v1/decisions`、`gpt-6-luna`，提供 predicate、choice、score 等有限答案类型；SDK 使用 `client.decisions.create(...)`。[4] 实施时锁定 SDK/服务版本，再核对合同与账户可用性。
 
-## 本次启用配置
+## 2026-11-08 首次启用配置
 
 本次在原实例选用以下非秘密配置，普通 LLM、embedding 及原 Q8 精排配置保留：
 

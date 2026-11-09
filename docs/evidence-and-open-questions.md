@@ -40,13 +40,23 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 
 | 范围 | 已取得的证据 | 尚不代表 |
 | --- | --- | --- |
-| 工程实现 | 服务 54 项测试通过；Herdr 359 项通过、4 项既有条件跳过；两条隔离跨仓入口可复跑 | 自然任务的业务验收 |
+| 工程实现 | 服务全量基线 54 项、后续插件专项 8 项通过；Herdr 359 项通过、4 项既有条件跳过；两条隔离跨仓入口可复跑 | 自然任务的业务验收 |
 | 云端服务 | 独立 systemd/持久 SQLite；公网 HTTP/MCP 同记录和反馈回执；真实 Luna predicate 返回并持久读回 | 长期稳定性、效率或模型准确率 |
 | OAuth | 独立 GitHub App；公网发现、DCR、S256；登记跨重启；异常不回显、存储拒写边界已回归 | 所有客户端都已授权 |
 | Mac 原生工作流与模型 | 固定版本消费者；真实 Luna 选择分支、原 runner 采用；一次原生 Codex 回合确认 gpt-6.1-sol/low；两个决策共一个结果第 2 修订，FINISHED、待传 0 | 生产角色迁移或一般任务质量 |
 | 本地插件 | 默认用户 catalog 已安装启用；原生 OAuth 登录及不注入 Bearer 的工具读回通过 | 所有在途桌面会话均已刷新技能目录 |
-| 云端 App | Decision Service Cloud 原生私有 App 已安装/授权，三个工具可发现；原生 get_decision 与本地/REST 的 decision_id 一致；v1.0.2 Skill 与仓库原文逐字节一致，App 绑定和名称保留 | Skill 发布读回不单独证明每个宿主已自动加载 |
-| 真实跨 bank | 独立只读主体已配置；两库请求穿过网关到达 Win 原生 API；原生返回 HTTP 500，适配器如实记录 failed | 当前跨库尚未通过，不以 HTTP 外层 200 或后续判断成功代替 |
+| 云端 App | Decision Service Cloud 原生私有 App 已安装/授权，三个工具可发现；原生 get_decision 与本地/REST 的 decision_id 一致；v1.0.2 Skill 与仓库原文逐字节一致，App 绑定和名称保留；用户已在云端显式加载 Skill 并查回同一测试记录，未创建决策或反馈 | 一次显式加载不证明所有旧会话已自动刷新 |
+| 真实跨 bank | Luna 精排路径遇拒答而返回 500；获准的 Q8 备选试验中一库返回 35 条片段，另一库等待 Win 中继响应超时，最终判断 unknown/openai_timeout；同一结果已持久读回 | 双库与最终判断未通过，不以 HTTP 200、局部命中或 Q8 加载成功代替 |
+
+### Q8 备选试验与恢复（2026-11-09）
+
+本次切换的目的是测试备选方案，不是决定长期替换 Luna。只将 Hindsight 的 recall Decision Model provider 从 openai 改为 none，使用已保留的 ONNX Q8 排序；没有调整候选、阈值、45 秒服务总预算或其他模型配置。只发送一次双 bank evaluate，并按原 request_id 查询同一记录。
+
+- Decision Service bank 成功：35 条片段均有 memory 引用，29 条有 document 引用；现有网关日志显示单次约 32.58 秒。
+- Herdr bank 失败：单次约 44.40 秒，分类为 TIMEOUT/api_relay_roundtrip。Win 内部耗时未确认，不能据此断言是网络或 CPU 故障。
+- 最终决策为 unknown/openai_timeout，没有可用答案；客户端端到端墙钟约 53.76 秒。总预算配置仍为 45 秒，墙钟差异原因未定位，不能宣称在预算内完成。
+- 试验与清理前均核对原生 API 列出的 4 个 bank 无等待或处理中异步操作；不据此宣称没有同步请求。配置备份及访问权限已核验，两次均只重载 API，PG/BGE 原进程保留。
+- 14:27（Asia/Shanghai）已恢复 recall=openai，配置文件哈希与试验前完全一致，新 API 健康。清理没有追加 recall、evaluate 或模型请求。Q8 未采纳为长期方案，原 Luna 拒答原因仍未知。
 
 两条仓内隔离入口使用真实本地 HTTP/SQLite、生成 runner 和上游/宿主替身，覆盖回执丢失、部分 recall 失败、进程中断、配置读回、联合结果及质量修订，见[可复跑命令](development.md)。真实工程样例另有原生回执，不能混用两类证据。模型准确率、整单效率和 token 收益尚无实测结论；Hindsight webhook 仍后置。公开材料不包含凭据、内部连接细节或私有来源内容。下文带 2026-11-08 日期的章节保留当时调研事实，不代表当前实现状态。
 

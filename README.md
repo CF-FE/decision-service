@@ -2,7 +2,7 @@
 
 跨项目、跨 Agent 与工作流复用的快速决策服务，通过 OpenAI Decisions API 和 Hindsight 跨 bank 检索，为动态工作流选择推进/调整方案，并按任务需求与复杂度选择角色使用的模型及推理强度。
 
-> 当前阶段：云端服务与 Mac 消费者已部署（2026-11-09），真实 Luna 判断及 Herdr 独立工程闭环通过。服务侧 54 项测试通过，Herdr 侧 359 项通过、4 项既有条件跳过。云端 Decision Service Cloud 与本地插件均已 OAuth 连接并读回同记录，云端 Skill 已发布；真实跨 bank 仍因 Hindsight 原生 HTTP 500 待修复。三个 gpt-6.1-sol 实现会话负责编码，两个原会话只审计复核。工程回执不等于自然业务验收或效率收益证明。
+> 当前阶段：云端服务与 Mac 消费者已部署（2026-11-09），真实 Luna 判断及 Herdr 独立工程闭环通过。服务全量基线 54 项、后续插件专项 8 项通过；Herdr 359 项通过、4 项既有条件跳过。云端 Decision Service Cloud 与本地插件均已 OAuth 连接，云端 Skill 的显式加载和只读查询也已确认。真实跨 bank 尚未通过：Luna 精排拒答后，Q8 备选试验只恢复一库，另一库及最终判断超时；试验结束已恢复原 Luna 召回配置。三个实现会话负责编码，两个原会话只审计复核。工程回执不等于自然业务验收或效率收益证明。
 
 - [GitHub Project #7](https://github.com/orgs/CF-FE/projects/7)
 - [讨论与决策记录](docs/discussion-record.md)
