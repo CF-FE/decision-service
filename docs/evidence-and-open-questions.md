@@ -1,6 +1,6 @@
 # 来源、事实与待验证事项
 
-整理日期：2026-11-08；当前交付边界更新于 2026-11-09。本文区分官方文档口径、设计提案和运行验证；不包含现有私有系统的连接细节或业务数据。
+整理日期：2026-11-08；当前交付边界更新于 **2026-11-09 07:40 UTC / 北京时间 15:40**。本次拒答资料说明为 **v1.1**，版本历史见 [Hindsight 说明](hindsight-decision-models.md)。本文区分官方文档口径、设计提案和运行验证；不包含现有私有系统的连接细节或业务数据。
 
 ## OpenAI Decisions API
 
@@ -60,6 +60,8 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 
 ### Luna 局部拒答补丁与真实验证（2026-11-09）
 
+本节按 [#6](https://github.com/CF-FE/decision-service/issues/6) 截至上述时间的收口记录整理；本次文档核对未重新部署、重放公开复现或追加真实模型请求。
+
 [Issue #6](https://github.com/CF-FE/decision-service/issues/6) 记录故障与后续验证。[Herdr 固定提交 49e48b5c](https://github.com/CF-FE/herdr-4-codexcloud/commit/49e48b5c6a8a23d90d68a53dafbe9a37b680c6b3) 维护 Hindsight API Slim 1.2.0 的三个文件补丁、前后哈希、回归与回退说明。15:29（Asia/Shanghai）沿原 SYSTEM 入口完成 API 单独重载；原文件备份、部署源码、ACL、模块导入和新进程健康均已读回，PG/BGE 进程及原配置保持不变。
 
 补丁只对 OpenAI recall 候选排序允许局部拒答：显式拒答项在排名前排除，正常零概率仍是有效答案；全部拒答仍失败，缺答或非法答案不降成零。普通调用及去重题保留严格拒答行为，trace 保留逐题拒答标记和已有 usage。原版同组离线用例失败，补丁版 14 项全部通过，主审独立复跑；Herdr 结构检查及 363 项全套检查通过（359 通过、4 跳过）。离线 HTTP 和分词计数使用替身，真实采用另以下列回执为准。
@@ -70,6 +72,8 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 - 最终状态 complete、处置 suggested，模型 openai/gpt-6-luna、类型 decision；原生 predicate probability=1.0。这是该次模型的输出，不是业务正确性证明。
 - POST 时间窗口内，Win 日志有两条匹配本题前缀的 recall-start，以及明确的 1/100、10/100 部分拒答告警。告警没有 bank/request 标签，不能将两条拒答数逐一指定给某库；该窗口没有其他可见的外部 recall-start。
 - 本轮没有 retain、反馈或业务工作流写入。原始拒答原因、是否曾限流仍未知；接口没有将 refusal 定义为“证据不足”。上游 [#6242](https://github.com/vectorize-io/hindsight/issues/6242) 与 [#6389](https://github.com/vectorize-io/hindsight/pull/6389) 已记录整次改用备用 reranker 的方案，本轮采用的是用户指定的 Luna 候选级处理。
+
+上游 [#6242](https://github.com/vectorize-io/hindsight/issues/6242) 的公开复现和 [#6389](https://github.com/vectorize-io/hindsight/pull/6389) 的合并记录证明另一种默认关闭的整批 reranker fallback 已进入上游源码；不证明本机安装、开关启用或本地根因。两方案的具体差异与固定版本见[对照说明](hindsight-decision-models.md#上游整批回退与本地局部拒答方案)。#6 继续开放用于原因诊断记录，本轮不追加请求追查原因。
 
 两条仓内隔离入口使用真实本地 HTTP/SQLite、生成 runner 和上游/宿主替身，覆盖回执丢失、部分 recall 失败、进程中断、配置读回、联合结果及质量修订，见[可复跑命令](development.md)。真实工程样例另有原生回执，不能混用两类证据。模型准确率、整单效率和 token 收益尚无实测结论；Hindsight webhook 仍后置。公开材料不包含凭据、内部连接细节或私有来源内容。下文带 2026-11-08 日期的章节保留当时调研事实，不代表当前实现状态。
 

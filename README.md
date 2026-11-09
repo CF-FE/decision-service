@@ -15,6 +15,7 @@
 - [本地与云端插件安装](docs/plugin-installation.md)
 - [Hindsight 集成与经验闭环](docs/hindsight-integration.md)
 - [Hindsight Decision Models 与 OpenAI 支持边界](docs/hindsight-decision-models.md)
+- [上游拒答复现、整批回退与本地局部方案](docs/hindsight-decision-models.md#上游复现共同路径与未知原因)
 - [决策结果回收与验证方案](docs/outcome-feedback.md)
 - [部署、安全与故障边界](docs/deployment.md)
 - [阶段路线图与验收](docs/roadmap.md)
