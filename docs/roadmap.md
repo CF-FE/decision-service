@@ -8,9 +8,9 @@
 
 | 优先级 | Issue | 当前状态 | 下一步与完成边界 |
 | --- | --- | --- | --- |
-| P1 | [#1 日常工作流与角色创建接入](https://github.com/CF-FE/decision-service/issues/1) | 已回读凡人原入口、负责人和检查点，尚无可接入的下一自然单元 | 原负责人确认有新单元和合法分支后，从原协调员入口取得采用、原生模型/强度、结果及验收回执。 |
-| P2 | [#4 基于真实反馈优化决策与模型强度](https://github.com/CF-FE/decision-service/issues/4) | 等待 #1 的自然任务记录 | 以质量、推进、返工和推荐/实际模型配置确定是否有必要调整；仅附现成用量。 |
-| P3 | [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) | 凡人单 bank 生产回调已启用，一条真实历史结果完成回收、按 ID 补偿及重启读回 | 发布由受控命令触发。后续工作流自动发布、其他 bank 和全库遗漏发现另行推进。 |
+| P1 | [#1 日常工作流与角色创建接入](https://github.com/CF-FE/decision-service/issues/1) | 凡人首件实际采用 `receipt_first` 与 `gpt-6.1-sol/high`，原报告和负责人 `revise` 的质量修订均已回收 | 首单质量为 `revise`。新 e14 绑定通过普通入口的隔离联调、独立只读差异核验和负责人限定验收。 |
+| P2 | [#4 基于真实反馈优化决策与模型强度](https://github.com/CF-FE/decision-service/issues/4) | 等待本次凡人实际执行与限定验收 | 由原负责人复盘同一执行的质量、推进、返工和推荐/实际模型配置，记录具体改进或维持理由及下一验证点。仅附现成可比用量。 |
+| P3 | [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) | 凡人单 bank 生产回调已启用，一条真实历史结果完成回收、按 ID 补偿及重启读回 | 凡人新单元的原报告与质量修订在同一事件下均经签名 webhook 回收。其他 bank 和全库遗漏发现另行推进。 |
 
 | 已收口 | 完成范围 | 保留的边界 |
 | --- | --- | --- |
