@@ -8,9 +8,9 @@
 
 | 优先级 | Issue | 当前状态 | 下一步与完成边界 |
 | --- | --- | --- | --- |
-| P1 | [#1 日常工作流与角色创建接入](https://github.com/CF-FE/decision-service/issues/1) | 现任凡人负责人已释放自动发布工程核验单元，两条运营路线和原宿主低/高两档已冻结，待同一正式运行回执 | 由原协调员完成运营选择、原生配置回读、结果自动发布及负责人验收，再读回两类反馈及恢复状态。 |
+| P1 | [#1 日常工作流与角色创建接入](https://github.com/CF-FE/decision-service/issues/1) | 凡人首件实际采用 `receipt_first` 与 `gpt-6.1-sol/high`，原报告和负责人 `revise` 的质量修订均已回收 | 单元的技术应用、工程质量和改进验证分别记录。 |
 | P2 | [#4 基于真实反馈优化决策与模型强度](https://github.com/CF-FE/decision-service/issues/4) | 等待本次凡人实际执行与限定验收 | 由原负责人复盘同一执行的质量、推进、返工和推荐/实际模型配置，记录具体改进或维持理由及下一验证点。仅附现成可比用量。 |
-| P3 | [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) | 凡人单 bank 生产回调已启用，一条真实历史结果完成回收、按 ID 补偿及重启读回 | 凡人新增工作流已接自动发布并通过隔离联调，正式单元的自然发布沿 #1 取证。其他 bank 和全库遗漏发现另行推进。 |
+| P3 | [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) | 凡人单 bank 生产回调已启用，一条真实历史结果完成回收、按 ID 补偿及重启读回 | 凡人新单元的原报告与质量修订在同一事件下均经签名 webhook 回收。其他 bank 和全库遗漏发现另行推进。 |
 
 | 已收口 | 完成范围 | 保留的边界 |
 | --- | --- | --- |
