@@ -1,6 +1,6 @@
 # 决策结果回收与效果验证
 
-状态：2026-11-09 直传、SQLite 修订与原端显式补传已实现、部署并通过工程审查。真实 Mac/云端合成工程样例中，工作流选择与模型配置均已采用，共用一个结果事件，第 2 个修订与质量证据可读回，来源端待传为 0。序列化字段归[v1 合同](api-contract.md)，不是 Hindsight 原生合同。尚未证明自然业务效果；Hindsight webhook 回收仍未配置或验证。
+状态：2026-11-09 直传、SQLite 修订与原端显式补传已实现、部署并通过工程审查。真实 Mac/云端合成工程样例中，工作流选择与模型配置均已采用，共用一个结果事件，第 2 个修订与质量证据可读回，来源端待传为 0。序列化字段归[v1 合同](api-contract.md)，不是 Hindsight 原生合同。尚未证明自然业务效果。P3 的单 bank 回收入口已通过本地隔离测试，默认关闭；凡人生产源、部署配置和真实回调尚未接通。
 
 ## 0. MVP 自动回传、精确回收与效果验证
 
@@ -85,7 +85,42 @@ record_decision_feedback 作为 HTTP/MCP 共用的能力接收两类程序反馈
 
 后续可将带来源和适用条件的案例写入获准 Hindsight 范围，供下一次决策检索。观察案例、质量证据支持的经验和策略效果结论分别标记；写入成功不提升证据等级。完整 Hindsight webhook、跨 bank 结果扫描和自动评价设施仍属下节后续能力，不是 MVP 程序化回传的前置。
 
-## 1. 后续 Hindsight webhook 回收方案
+## 1. Hindsight webhook 回收
+
+### 已实现的回收入口
+
+这是直传之外的可选入口。一次注册绑定一个 bank、一个 `project_id` 和一个原 `caller_scope`。服务只从已配置且获准的 bank 读原文，生产者仍由项目指定。无需改变直传 `Feedback`、迁移旧结果、为直传再写一份文档，或给 Decision Service 增加 Hindsight 写权限。
+
+私有服务配置在 `hindsight_outcomes` 下以 bank ID 为键，每项包含 `project_id`、`caller_scope`、`webhook_secret` 和 `producer_secret`。两类密钥各自独立，生产者密钥不得跨 bank 复用；需使用随机密钥（至少 32 字符）。配置必须匹配现有 caller 的 project/bank 授权和 `service_bank_ids`。同 scope、同项目、同 bank 的 caller 若有不同 bank 授权，启动时拒绝含糊映射。已有 `hindsight_api_mode` 选择原生 REST 或 VPS 网关精确读取；网关模式需非空 `hindsight_api_key`，启用前核实际只读权限。删除该 bank 的回收配置可停止处理其 inbox；记录按原项目和 scope 隔离，重新绑定不会暴露或处理旧绑定的记录。
+
+项目只在本来就要通过 Hindsight 发布结果时使用下列封装。`feedback` 保留原 [Feedback](api-contract.md) 的原字段、修订、`observed_at`、可得执行引用以及所有关联 `decision_ids`；两条路径传同一冻结对象，包括字段省略与 `null` 的区别。生产者可按下例构造同一修订的 `original_text` 和 ID：
+
+```python
+import hashlib
+import hmac
+import json
+
+def canonical(value):
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)
+
+outcome = {"record_type": "decision_outcome", "bank_id": bank_id,
+           "caller_scope": caller_scope, "feedback": feedback}
+signature = hmac.digest(producer_secret.encode("utf-8"), canonical(outcome).encode("utf-8"), "sha256").hex()
+original_text = canonical({"outcome": outcome, "signature": signature})
+document_id = "decision-outcome-v1-" + hashlib.sha256(original_text.encode("utf-8")).hexdigest()
+```
+
+发布者签名覆盖原反馈、bank 和原作用域；文档 ID 包含完整原文摘要，因此不能用改写后的同 ID 文档评价旧结果。Webhook 密钥只验证 Hindsight 的投递；既有共享 bank 的普通作者、标签和自报身份都不能提交反馈。两种传输共用 `caller_scope + project_id + event_id + revision`；同内容返回同一 `receipt_id`，异内容冲突，不多算结果或用量。新修订可先于旧修订到达。撤回一条仍可确认已结束的结果证据时，用同事件的新修订保存明确撤回引用、清除被撤回的结果引用、将相关质量改为 `unknown`；删除文档或读取失败不会隐式撤回。
+
+| 操作 | 回执与恢复 |
+| --- | --- |
+| `POST /v1/hindsight-webhooks/{bank_id}` | 只订阅该 bank 的 `retain.completed`，验证 Hindsight V2 原始字节签名和 ±300 秒时窗。只有 inbox 持久化后返回 `202`；无结果文档 ID 的同类事件返回 `204`。同投递 ID/同正文幂等，冲突为 `409`。 |
+| `GET /v1/hindsight-outcomes/{bank_id}/{document_id}` | 用原 scope 的 Bearer 查询通知/补偿记录；返回 `pending`、`recorded`、`rejected`、`access_blocked` 或 `retry_exhausted`。反馈和 `recorded` 回执原子提交；`recorded` 不表示业务验收。 |
+| `POST /v1/hindsight-outcomes/{bank_id}/{document_id}` | 同一授权下，用原发布回执或生产者索引给出的精确 ID 补回遗漏通知；`202` 回应带当前 `state` 及是否 `requeued`。相同补偿 ID 可重新排队读权限阻塞或已耗尽的读取；签名不符或修订冲突保留 `rejected`，不会被重排。 |
+
+暂时读取失败按 5/30/120 秒退避，同一 inbox 继续；进程重启恢复未完成项。补偿入口不枚举 bank，也不从 recall 或 webhook 投递历史推断缺失的文档 ID。现有 VPS 网关允许 `get_document`，不允许 Documents 时间窗枚举。若需自动发现完全丢失的通知，最小接法是复用发布者已有的精确文档索引；若没有该索引，再由网关维护者授权原生时间窗枚举，处理重叠窗口和分页漂移。当前未部署该枚举、未登记生产 webhook。
+
+### 接入与演进边界
 
 保留“结果放对应项目 bank，decision-service 按授权读取回收”的方向，增加精确原文读取和最小确定性处理账本：
 
@@ -139,7 +174,7 @@ MVP 的服务可读集合和调用者/可信入口可读集合一次静态配置
 
 ## 4. 结果合同与不可变修订
 
-以下 envelope 用于后续 Hindsight webhook 回收，不要求 MVP 的直传事件先具备全部字段：
+下表是未来评价扩展可用的概念字段。已实现的 v1 回收采用[上文封装](#已实现的回收入口)及现有 Feedback 字段，不要求下表另有一份 payload：
 
 | 字段组 | 自定义字段与含义 |
 | --- | --- |

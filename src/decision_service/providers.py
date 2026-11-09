@@ -33,11 +33,11 @@ async def _post_json(client, path, body, provider, deadline):
     return payload, None
 
 
-def _gateway_recall_body(payload, bank_id):
+def _gateway_body(payload, bank_id, *, action, document_id=None):
     is_error = payload.get("isError", False)
     if not isinstance(is_error, bool):
         return None, "hindsight_invalid_response"
-    if is_error:
+    if is_error and action == "recall":
         return None, "hindsight_gateway_error"
 
     receipt = payload.get("structuredContent")
@@ -46,7 +46,7 @@ def _gateway_recall_body(payload, bank_id):
             raw = receipt["result"]
             try:
                 receipt = json.loads(raw) if isinstance(raw, str) else None
-            except json.JSONDecodeError:
+            except (ValueError, RecursionError):
                 receipt = None
     else:
         blocks = payload.get("content")
@@ -58,23 +58,27 @@ def _gateway_recall_body(payload, bank_id):
                 ):
                     try:
                         receipt = json.loads(block["text"])
-                    except json.JSONDecodeError:
+                    except (ValueError, RecursionError):
                         continue
                     if isinstance(receipt, dict):
                         break
 
     if not isinstance(receipt, dict):
-        return None, "hindsight_invalid_response"
+        # The relay can return a plain tool error before reaching the upstream (e.g. BUSY).
+        return None, "hindsight_gateway_error" if is_error and "structuredContent" not in payload else "hindsight_invalid_response"
     if receipt.get("state") in ("UNKNOWN", "NOT_SUBMITTED", "UNAVAILABLE", "BUSY"):
         return None, "hindsight_gateway_error"
     status = receipt.get("http_status")
     if (
-        receipt.get("state") != "RESPONSE" or receipt.get("action") != "recall"
+        receipt.get("state") != "RESPONSE" or receipt.get("action") != action
         or receipt.get("bank_id") != bank_id or type(status) is not int or not 100 <= status <= 599
+        or (document_id is not None and receipt.get("document_id") != document_id)
     ):
         return None, "hindsight_invalid_response"
     if not 200 <= status < 300:
         return None, f"hindsight_upstream_http_{status}"
+    if is_error:
+        return None, "hindsight_gateway_error"
     body = receipt.get("body")
     if not isinstance(body, dict):
         return None, "hindsight_invalid_response"
@@ -107,7 +111,7 @@ async def _recall_banks(bank_ids, base_url, headers, query, timeout, parallelism
                 )
                 if reason:
                     return None, reason
-                return _gateway_recall_body(payload, bank_id)
+                return _gateway_body(payload, bank_id, action="recall")
 
             path = f"/v1/default/banks/{quote(bank_id, safe='')}/memories/recall"
             return await _post_json(client, path, query, "hindsight", deadline)

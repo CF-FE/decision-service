@@ -1,9 +1,10 @@
 import json
 import os
+import re
 from pathlib import Path
 from typing import Annotated, Literal
 
-from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, SecretStr, StringConstraints, field_validator
+from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field, SecretStr, StringConstraints, field_validator, model_validator
 
 Name = Annotated[str, StringConstraints(min_length=1, strip_whitespace=False, pattern=r"\S")]
 
@@ -13,6 +14,15 @@ class Caller(BaseModel):
     caller_scope: Name
     project_ids: list[Name]
     bank_ids: list[Name]
+
+
+class HindsightOutcomeSource(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    project_id: Name
+    caller_scope: Name
+    webhook_secret: SecretStr = Field(min_length=32)
+    producer_secret: SecretStr = Field(min_length=32)
 
 
 class GitHubOAuthSettings(BaseModel):
@@ -59,9 +69,35 @@ class Settings(BaseModel):
     hindsight_base_url: str | None = None
     hindsight_api_key: SecretStr | None = None
     hindsight_api_mode: Literal["native", "gateway"] = "native"
+    hindsight_outcomes: dict[Name, HindsightOutcomeSource] = Field(default_factory=dict)
     timeout_seconds: float = Field(default=15, gt=0)
     evidence_max_chars: int = Field(default=6000, gt=0)
     max_parallel_banks: int = Field(default=4, gt=0)
+
+    def outcome_caller(self, bank_id, source):
+        matches = [caller for caller in self.callers.values() if caller.caller_scope == source.caller_scope
+                   and source.project_id in caller.project_ids and bank_id in caller.bank_ids]
+        if not matches or any(set(c.bank_ids) != set(matches[0].bank_ids) for c in matches):
+            raise ValueError("Outcome source requires an unambiguous existing caller and bank grant")
+        return matches[0]
+
+    @model_validator(mode="after")
+    def validate_outcome_sources(self):
+        if self.hindsight_outcomes and not self.hindsight_base_url:
+            raise ValueError("Outcome sources require an exact-read Hindsight endpoint")
+        if self.hindsight_outcomes and self.hindsight_api_mode == "gateway" and (
+            not self.hindsight_api_key or not self.hindsight_api_key.get_secret_value().strip()
+        ):
+            raise ValueError("Outcome recovery through the gateway requires a read credential")
+        hook_keys = {s.webhook_secret.get_secret_value() for s in self.hindsight_outcomes.values()}
+        producer_keys = {s.producer_secret.get_secret_value() for s in self.hindsight_outcomes.values()}
+        if hook_keys & producer_keys or len(producer_keys) != len(self.hindsight_outcomes):
+            raise ValueError("Outcome producer keys must be distinct from webhook and other producer keys")
+        for bank_id, source in self.hindsight_outcomes.items():
+            if bank_id not in self.service_bank_ids or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", bank_id):
+                raise ValueError("Outcome bank is not an eligible service bank")
+            self.outcome_caller(bank_id, source)
+        return self
 
     @classmethod
     def from_env(cls):

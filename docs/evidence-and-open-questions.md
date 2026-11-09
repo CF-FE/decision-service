@@ -48,6 +48,21 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 | 云端 App | Decision Service Cloud 原生私有 App 已安装/授权，三个工具可发现；原生 get_decision 与本地/REST 的 decision_id 一致；v1.0.2 Skill 与仓库原文逐字节一致，App 绑定和名称保留；用户已在云端显式加载 Skill 并查回同一测试记录，未创建决策或反馈 | 一次显式加载不证明所有旧会话已自动刷新 |
 | 真实跨 bank | Win 已应用 Luna 候选拒答补丁；原 45 秒预算下一次 evaluate 用时 14.873 秒，两库各返回 3 个带 memory 引用的片段，最终判断 complete/suggested，同记录读回一致 | 一次工程验证不代表长期相关性、吞吐或业务验收；拒答原因仍未知 |
 
+### 凡人接入与 Hindsight 回收检查点（2026-11-09）
+
+| 范围 | 实际回读 | 接续条件 |
+| --- | --- | --- |
+| 原任务及任职 | [凡人 Issue #2](https://github.com/CF-FE/fanren-work/issues/2) 为 open；[Project #5/item 285760278](https://github.com/orgs/CF-FE/projects/5?pane=issue&itemId=285760278) 为 In Progress。现任负责人为第 1 代，Mac 正式台账与受控原生路由一致；实时 Herdr 绑定/槽位未在桌面开发会话确认。 | 原协调员核实时身份、原动作与未决创建；业务验收归现任负责人。 |
+| P1 真实单元 | `fanren-work` 现场源码 `6fa0982`，现场安装 runner `36e23b4`；用项目只读入口重读 26 个固定检查点，全为 `FINISHED/accepted`，无当前 action，整集未接受。最新原处置未释放新单元：等待原发布/构建证据或可验证的保管者，保留原请求。 | 取得真实新输入后，由负责人限定尚未执行的 `PREPARE_NEW` 单元。原协调员只给出当前合法的运营选项；有合法新执行槽位时，按该宿主可用且获准候选选型、原生启动读回线程/模型，再冻结投递绑定，经原 intent/bind/collect 一次发单。既有 `owner_acceptance` 保持负责人原生决定。 |
+| P2 效果 | 没有本轮自然任务采用、真实质量、返工或推荐/实际配置样本。保留当前问题和配置，尚无证据支持升降档或认定提效；可比 token/耗时未取得。 | 对同一原单元读回两条 application 与共享 result、现有质量和负责人结论；保留原端的 pending/UNKNOWN。 |
+| P3 来源与实现 | 凡人 bank 目录当时为 18 条，未见决策结果发布文档；对一条实际文档按精确 ID 回读，确认可取 `original_text`，该原文是历史流程记忆。对端固定 Hindsight 1.2.0 源码支持 V2 签名回调，现行网关源码允许 `get_document`。本仓隔离验证了跨重启、原回执去重、网关精确读、失败退避、乱序和发布者隔离。 | 明确实际生产者和最小 bank 读取授权、启用单 bank 回调、证明原文读回并从原索引核遗漏。无可信发布者/可用精确索引时继续直传，不能将直传列为自动回收通过。 |
+
+工作流接入沿 `fanren-work` 原入口。宿主启用及白名单归 Herdr，本仓承接决策和反馈回收。2026-11-09 18:13:26 北京时间，Mac 消费者安装源为 `701cd01b`，26 个安装文件均与固定版本摘要一致。`8612a9a` 对应历史合成工程样例及回退版本，`2df05a48` 对应既有服务发布。本轮凡人状态仍停在负责人释放下一单元之前。[Herdr 部署回执](https://github.com/CF-FE/herdr-4-codexcloud/blob/main/docs/status.md#mac-model-allowlist-deployment)
+
+本次启用覆盖 Mac Codex 新单元创建。生效策略为 rev4，省略 `requirements.models` 和 `requirements.efforts` 时按默认 `gpt-6.1-sol` / `high` 筛选。下一真实单元如果确有选型空间，由原创建者显式提供适用的型号与强度，入口再与宿主能力和白名单取交集。单候选的实际采用只提供配置回执，复杂度匹配效果仍待自然任务反馈。Win 和 Cloud、手工组织角色创建及图像工具调用的覆盖范围见 Herdr 部署回执。
+
+凡人接续证据沿原协调员受控 `coordinator-result-latest.json`（SHA-256 `03f25f2dbf977aaae44393a09bb5c15c59fd8326f58ebd66b88276a3195b1bfb`，观察于 2026-11-09 17:16 北京时间）的 `upstream_source_request` 与 `last_owner_disposition` 查回。原请求仍等待可验证的原件或保管者；发现新证据时沿同一对象续接。
+
 ### Q8 备选试验与恢复（2026-11-09）
 
 本次切换的目的是测试备选方案，不是决定长期替换 Luna。只将 Hindsight 的 recall Decision Model provider 从 openai 改为 none，使用已保留的 ONNX Q8 排序；没有调整候选、阈值、45 秒服务总预算或其他模型配置。只发送一次双 bank evaluate，并按原 request_id 查询同一记录。
@@ -75,7 +90,7 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 
 上游 [#6242](https://github.com/vectorize-io/hindsight/issues/6242) 的公开复现和 [#6389](https://github.com/vectorize-io/hindsight/pull/6389) 的合并记录证明另一种默认关闭的整批 reranker fallback 已进入上游源码；不证明本机安装、开关启用或本地根因。两方案的具体差异与固定版本见[对照说明](hindsight-decision-models.md#上游整批回退与本地局部拒答方案)。#6 已于 2026-11-09 按技术修复和部署验证完成关闭；拒答原因及历史限流证据缺口作为 UNKNOWN 留档，不为此继续发起请求。剩余工作见[当前优先级](roadmap.md#当前优先级与-issue-状态)。
 
-两条仓内隔离入口使用真实本地 HTTP/SQLite、生成 runner 和上游/宿主替身，覆盖回执丢失、部分 recall 失败、进程中断、配置读回、联合结果及质量修订，见[可复跑命令](development.md)。真实工程样例另有原生回执，不能混用两类证据。模型准确率、整单效率和 token 收益尚无实测结论；Hindsight webhook 仍后置。公开材料不包含凭据、内部连接细节或私有来源内容。下文带 2026-11-08 日期的章节保留当时调研事实，不代表当前实现状态。
+两条仓内隔离入口使用真实本地 HTTP/SQLite、生成 runner 和上游/宿主替身，覆盖回执丢失、部分 recall 失败、进程中断、配置读回、联合结果及质量修订，见[可复跑命令](development.md)。真实工程样例另有原生回执，不能混用两类证据。模型准确率、整单效率和 token 收益尚无实测结论。Hindsight webhook 已纳入本轮，当前为本地实现与验证，尚待生产接线。公开材料不包含凭据、内部连接细节或私有来源内容。下文带 2026-11-08 日期的章节保留当时调研事实，不代表当前实现状态。
 
 ## Hindsight webhook 与反馈回收补充（2026-11-08）
 

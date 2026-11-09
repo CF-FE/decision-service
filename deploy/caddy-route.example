@@ -3,7 +3,7 @@
 redir @decision_service_home /decision-service/health 302
 @decision_oauth_metadata path /.well-known/oauth-authorization-server/decision-service /.well-known/openid-configuration/decision-service /.well-known/oauth-protected-resource/decision-service/mcp
 reverse_proxy @decision_oauth_metadata 127.0.0.1:8768
-@decision_service path /decision-service/health /decision-service/mcp /decision-service/v1/decisions /decision-service/v1/decisions/* /decision-service/v1/decision-feedback /decision-service/authorize /decision-service/token /decision-service/register /decision-service/auth/callback /decision-service/consent
+@decision_service path /decision-service/health /decision-service/mcp /decision-service/v1/decisions /decision-service/v1/decisions/* /decision-service/v1/decision-feedback /decision-service/v1/hindsight-webhooks/* /decision-service/v1/hindsight-outcomes/* /decision-service/authorize /decision-service/token /decision-service/register /decision-service/auth/callback /decision-service/consent
 handle @decision_service {
     uri strip_prefix /decision-service
     request_body {
