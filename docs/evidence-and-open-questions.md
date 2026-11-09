@@ -57,15 +57,15 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 | P2 效果 | 负责人把只读证据核验与 Herdr 控制分开，把部分报告到达与完整工程收件分开，并保留 `high`。首单两组工程检查均受身份前置影响，现有样本无法支持模型强度调整。 | 后继在原线程的新业务回合实做九项检查，负责人采纳核验事实并暂缓完整采用。随后放行的 e14 绑定差异核验实做五项，负责人限定验收该报告及三个普通入口的共同绑定。两个后继均复用原执行者和 `high`，新增 Decision Service 判断为零。 |
 | P3 自动回收 | 凡人新单元在原收件后触发发布。发布状态库移至原协调员已有写权的私有目录。发布器兼容实际网关的 HTTP 200 `not_found`，随后沿原事件、文档及 operation 恢复。 | 同一事件的原报告修订和质量修订分别由签名 webhook 送回，初次质量为 `pending`，现行质量为 `failed`。 |
 
-Mac 安装的 Herdr 消费者为 `6211709`，凡人工作流为 `ec641a1`。首单触发时使用发布器 `25742f6`，原协调员随后用独立安装的 `e14d360` 恢复同一批待传事件。发布器兼容修订、只读核验约定和源码均已合并。[发布器](https://github.com/CF-FE/decision-service/pull/11) · [生产兼容修复](https://github.com/CF-FE/decision-service/pull/13) · [Herdr 消费者](https://github.com/CF-FE/herdr-4-codexcloud/pull/19) · [凡人工作流](https://github.com/CF-FE/fanren-work/pull/12) · [只读交接约定](https://github.com/CF-FE/fanren-work/pull/13)
+首单使用 Mac 上独立安装的 Herdr 消费者 `6211709`、凡人工作流 `ec641a1` 及发布器 `25742f6`。原协调员随后用独立安装的 `e14d360` 恢复同一批待传事件。发布器兼容修订、只读核验约定和源码均已合并。[发布器](https://github.com/CF-FE/decision-service/pull/11) · [生产兼容修复](https://github.com/CF-FE/decision-service/pull/13) · [Herdr 消费者](https://github.com/CF-FE/herdr-4-codexcloud/pull/19) · [凡人工作流](https://github.com/CF-FE/fanren-work/pull/12) · [只读交接约定](https://github.com/CF-FE/fanren-work/pull/13)
 
-新冻结的普通入口让收件、负责人质量修订和对账共同使用 `e14d360`。已安装组件在隔离环境从三个普通入口回收两条签名修订，待回传归零。只读差异回合核对新旧绑定和生产原件，原生产首单仍按原事件及两条已确认回执保留。新的受管生产检查点待获准的新单元使用。后继只读验收单独留证，首单的 `revision_required` 和后继九项报告的 `PARTIAL` 分类按原记录保留。
+首单之后的固定入口核验让收件、负责人质量修订和对账共同使用 `e14d360`。已安装组件在隔离环境从三个普通入口回收两条签名修订，待回传归零。只读差异回合核对新旧绑定和生产原件，原生产首单仍按原事件及两条已确认回执保留。受管普通入口已从各主分支安装并读回，新生产检查点待获准的新单元使用。后继只读验收单独留证，首单的 `revision_required` 和后继九项报告的 `PARTIAL` 分类按原记录保留。[当前部署](deployment.md)
 
 原首集 26 个既有检查点的只读回查为 `FINISHED/accepted`，整集验收及原发布/构建证据仍沿原任务处理。新工程核验独立于这些制作单元。
 
 ### 凡人单 bank 生产回收（2026-11-09）
 
-- VPS 运行固定提交 `c38f58e2150a3ff59d5115ac6a2b08c2644ca7f1`。发布包 SHA-256 为 `7e2c9f0641ab6fabf91bfd3a4bd16847a81d1ebb7c31f8bb2c414f466699dc68`。首次启动受新虚拟环境目录权限阻挡，自动回切 `2df05a48` 后恢复健康。为新目录修正读取和执行权限，以服务账户验证导入，再使用同一构建重新切换。切换前备份并核验 SQLite，保留旧发布与原配置。
+- VPS 试点使用固定提交 `c38f58e2150a3ff59d5115ac6a2b08c2644ca7f1`。发布包 SHA-256 为 `7e2c9f0641ab6fabf91bfd3a4bd16847a81d1ebb7c31f8bb2c414f466699dc68`。首次启动受新虚拟环境目录权限阻挡，自动回切 `2df05a48` 后恢复健康。为新目录修正读取和执行权限，以服务账户验证导入，再使用同一构建重新切换。切换前备份并核验 SQLite，保留旧发布与原配置。该试点发布已保留作回退。[当前部署](deployment.md)
 - 生产试点沿凡人 [Issue #2](https://github.com/CF-FE/fanren-work/issues/2) 已接受的源身份核对单元。验收覆盖两份指定磁盘文件的身份与来源未匹配报告。旧加载映像、官方构建匹配、宿主恢复和整集验收仍未证实。原结果与验收的观察时间保留自 11 月 6 日原生记录，11 月 9 日单列当前回顾关联和发布时间。原单元无历史决策记录，回顾关联为普通单候选、不可执行，模型未调用，账本有一条 result 和零条 application。
 - Win Hindsight 原生异步 retain 的父 operation 和唯一子 operation 均完成。回调标识使用子 operation，事件与发布索引通过精确 document ID 和原文 SHA-256 对账。签名回调首次投递 `202`，VPS inbox 状态为 `recorded`。随后按同 document ID 补偿得到同一回执。受控重启后，公网 HTTP 和 MCP 以同一凡人 scope 读回相同内容，SQLite 对应事件修订仍为一条，原服务的其他 scope 查询该记录为 `404`。
 - 发布者由受控命令签名并冻结精确索引。回调只为凡人 bank 启用，后续结果仍由原生产者按合同发布。回退先禁用该 webhook，再按本次差量还原入口、读取授权和配置，按需切回旧发布。保留现有 SQLite 和原回执。完整 operation、通知、文档、结果和来源哈希见受控发布索引及复核回执。[Decision Service Issue #3](https://github.com/CF-FE/decision-service/issues/3)
