@@ -32,7 +32,8 @@ def gateway(action, args, state, status, body, **extra):
         "http_status": status, "body": body, **extra}})
 
 
-def test_lost_submission_response_reuses_frozen_identity_and_waits_for_real_receipt(tmp_path):
+@pytest.mark.parametrize("failure", ["transport", "contradictory-busy"])
+def test_lost_submission_response_reuses_frozen_identity_and_waits_for_real_receipt(tmp_path, failure):
     source = event()
     sends = []
     operation_visible = False
@@ -55,6 +56,10 @@ def test_lost_submission_response_reuses_frozen_identity_and_waits_for_real_rece
         sends.append(args)
         assert json.loads(args["content"])["outcome"]["feedback"] == source
         assert args["document_id"].endswith(sha256(args["content"].encode()).hexdigest())
+        if failure == "contradictory-busy":
+            return httpx.Response(200, json={"isError": True, "content": [
+                {"type": "text", "text": "BUSY: no upstream action started"}],
+                "_meta": {"hindsight_gateway": {"attempts": [{"request_may_have_started": True}]}}})
         raise httpx.ReadTimeout("response lost")
 
     first = publisher(tmp_path, upstream).publish(source)

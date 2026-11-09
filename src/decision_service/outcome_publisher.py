@@ -128,7 +128,7 @@ class OutcomePublisher:
         })
         receipt = result.get("structuredContent")
         if action == "retain" and result.get("isError") is True:
-            if receipt is None and result.get("content") == [{"type": "text", "text": "BUSY: no upstream action started"}]:
+            if result == {"isError": True, "content": [{"type": "text", "text": "BUSY: no upstream action started"}]}:
                 return {"state": "NOT_SUBMITTED", "request_started": False}
             metadata = result.get("_meta")
             trace = metadata.get("hindsight_gateway") if isinstance(metadata, dict) else None
