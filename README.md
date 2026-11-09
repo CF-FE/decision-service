@@ -58,7 +58,7 @@ HTTP 与 MCP 已实现 evaluate_decision、get_decision 和 record_decision_feed
 
 Hindsight 继续负责经验检索；原工作流保留业务状态、产物/验收权威与待回传事件。服务 SQLite 保存已收到的反馈，不替代来源端恢复补传。详细设计归[内部存储与数据归属](docs/architecture.md#内部存储与数据归属)。
 
-服务已部署到现有 VPS，使用独立进程、凭据和持久数据目录；Mac 保留 Herdr 协调与执行接续，Windows 保留制作与 Hindsight 后端。MVP 包含适配器自动反馈；Hindsight webhook 与全库补偿后续增加。
+服务已部署到现有 VPS，使用独立进程、凭据和持久数据目录。Mac 保留 Herdr 协调与执行接续，Windows 保留制作与 Hindsight 后端。适配器可直接回传反馈。凡人 bank 已启用 Hindsight webhook，并用一条经受控命令发布的真实历史结果验证了回调、按文档 ID 补偿及重启后的读回。[生产回收证据](docs/evidence-and-open-questions.md#凡人单-bank-生产回收2026-11-09)
 
 ## 不承担的职责
 
@@ -70,7 +70,7 @@ Hindsight 继续负责经验检索；原工作流保留业务状态、产物/验
 
 ## 后续顺序
 
-M1 工程闭环已完成。剩余按 [#1 日常工作流/角色接入](https://github.com/CF-FE/decision-service/issues/1) → [#4 真实反馈迭代](https://github.com/CF-FE/decision-service/issues/4) → 按需 [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) 推进；当前无需配置 webhook。#2/#5/#6 已关闭，完整状态和完成条件见[当前优先级](docs/roadmap.md#当前优先级与-issue-状态)。
+M1 工程闭环已完成。凡人单 bank 生产试点已通过，工作流自动发布、其他 bank 接入和全库遗漏扫描仍待实施。日常工作流与角色接入沿 #1 推进，真实反馈迭代沿 #4 跟踪。[当前优先级](docs/roadmap.md#当前优先级与-issue-状态)
 
 原适配器自动回传 application（实际采用）和 result（工作单元结果），按 decision_id 与原执行引用精确关联；人工纠正可补充。原检查点保存待传事件，恢复补传不重跑业务；质量可后补修订，成本去重，缺反馈单列。Hindsight 用于召回经验，不承担找全结果。详见[结果回收与效果验证](docs/outcome-feedback.md)。
 
