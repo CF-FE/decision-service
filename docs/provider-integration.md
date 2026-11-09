@@ -27,16 +27,17 @@ decision = call_decisions(validated_request, retrieval["evidence"], provider_set
 
 | 版本与时间 | 记录 |
 | --- | --- |
-| 本节文档版本 | **v1.0**；仅为本仓说明的维护版本，不是 OpenAI API 或模型版本。 |
-| 更新时间 | **2026-11-09 07:05 UTC / 北京时间 2026-11-09 15:05**。 |
+| 本节文档版本 | **v1.1**；仅为本仓说明的维护版本，不是 OpenAI API 或模型版本。 |
+| 更新时间 | **2026-11-09 07:40 UTC / 北京时间 2026-11-09 15:40**。 |
 | 官方资料核验日期 | **2026-11-09**；[Decisions 指南](https://developers.openai.com/api/docs/guides/decisions)、[Create decision 参考](https://developers.openai.com/api/reference/resources/decisions/methods/create)和[错误码指南](https://developers.openai.com/api/docs/guides/error-codes)为在线文档，核对页面未标明独立的合同/schema 版本号。不要把本节版本或核验日期当作上游版本号。 |
-| 实现对照基线 | Decision Service [45bf3a9](https://github.com/CF-FE/decision-service/tree/45bf3a99423fe4e5618febe56badccf170eaf126)；Hindsight API Slim **1.2.0** 对照固定上游提交 [34a1386](https://github.com/vectorize-io/hindsight/tree/34a138684a899b6ec34175f7a2b633860466d289)。运行中的安装/补丁状态须另行读回，不能仅凭本文判定。 |
+| 实现对照基线 | Decision Service provider/core 仍为 [45bf3a9](https://github.com/CF-FE/decision-service/tree/45bf3a99423fe4e5618febe56badccf170eaf126) 的实现；Hindsight API Slim **1.2.0** 原文件对照 [34a1386](https://github.com/vectorize-io/hindsight/tree/34a138684a899b6ec34175f7a2b633860466d289)，本地局部拒答补丁为 [Herdr 49e48b5](https://github.com/CF-FE/herdr-4-codexcloud/commit/49e48b5c6a8a23d90d68a53dafbe9a37b680c6b3)。运行采用依据 [#6 的部署读回](https://github.com/CF-FE/decision-service/issues/6)，不由源码发布推定。 |
 
 后续变更本节时递增文档版本，更新上述时间、资料核验日期与实现基线，并在下表记录变化；历史内容可按对应 Git 提交追溯。
 
 | 文档版本 | 更新时间 | 变更 |
 | --- | --- | --- |
 | v1.0 | 2026-11-09 07:05 UTC / 北京时间 15:05 | 首次整理四种答案、逐题拒答、批量限制、服务映射和证据边界；增加版本、时间与固定实现基线。 |
+| v1.1 | 2026-11-09 07:40 UTC / 北京时间 15:40 | 对照上游 #6242/#6389 与本地 #6，区分共同传播路径、整批回退、局部拒答补丁和已有部署证据；原生返回合同及本服务映射不变。 |
 
 ### 请求与响应外壳
 
@@ -73,6 +74,8 @@ Decisions 用于有限类型判断，不负责生成任意 JSON、文字解释�
 读取时先检查每项 `type`，再访问该类型字段。上例第二题没有 `probability`，不能补成 0、false、确定无关或成功判断。是否保留其他答案由调用方的业务边界决定；全部拒答不等于有效空结果。[官方 per-question refusal 定义](https://developers.openai.com/api/reference/resources/decisions/methods/create)
 
 截至核验日，官方没有在上述 Decisions 文档中说明具体拒答触发规则，也没有给出“证据不足即拒答”的约定。仅见 `type=refusal` 无法断定是安全原因、证据不足、限流或并发过高；低概率/低置信度也不等同拒答。
+
+上游 [Hindsight #6242](https://github.com/vectorize-io/hindsight/issues/6242) 提供了独立复现，但只能支持共同的拒答传播路径，未查明 Luna 拒答原因。其修复 [#6389](https://github.com/vectorize-io/hindsight/pull/6389) 是默认关闭的整批 reranker fallback；本地 #6 是保留正常答案、排除明确拒答候选的另一种方案。版本、默认开关、502 重试及运行证据见[方案对照](hindsight-decision-models.md#上游整批回退与本地局部拒答方案)，不能把上游已合并等同于本地已启用。
 
 请求级 HTTP 错误与逐题 refusal 分开处理。HTTP 429 还需检查错误类别/代码及相关响应头，区分请求速率、额度等原因；超时只说明本次未取得可确认结果。不能从 Hindsight 外层 500 或末次 refusal 反推曾发生 429，也不能由异常文本中的重复行计算请求次数。[OpenAI 错误码](https://developers.openai.com/api/docs/guides/error-codes)、[本次故障证据边界 #6](https://github.com/CF-FE/decision-service/issues/6)
 

@@ -1,6 +1,13 @@
 # Hindsight Decision Models 与 OpenAI Decisions
 
-更新日期：2026-11-09。当前继续使用 Luna；Win Hindsight API Slim 1.2.0 已应用候选级拒答补丁，一次真实双库检索、最终判断及持久读回在原 45 秒预算下通过。此前 Q8 备选试验未通过完整链路，已恢复原配置。拒答触发原因仍未知，以下分别记录部署、工程验证和历史试验，不声称长期质量或效率收益已验证。
+文档版本：**v1.1**。资料核验时间：**2026-11-09 07:40 UTC / 北京时间 15:40**。这是本仓说明的维护版本，不是上游 API 版本；线上文档未标独立合同版本号，以下用固定提交、Issue/PR 和取证时间区分证据。
+
+当前记录：据[本项目 #6 的运行收口](https://github.com/CF-FE/decision-service/issues/6)，Win 局部拒答补丁已于北京时间 15:29 部署，唯一一次真实双 bank 与最终 Luna 判断通过，仍使用 OpenAI / gpt-6-luna。Q8 备选试验先前未通过且已恢复；拒答**传播缺陷**已处理，拒答**触发原因**及此前是否曾有限流仍 UNKNOWN。本轮只核对公开文档、固定源码和已有运行记录，没有重新探测生产或追加模型调用。
+
+| 文档版本 | 时间 | 变化 |
+| --- | --- | --- |
+| v1.0 | 2026-11-09，随 [PR #7](https://github.com/CF-FE/decision-service/pull/7) 合入 | 四种返回与逐题拒答说明，当时本地修复仍在进行。 |
+| v1.1 | 2026-11-09 07:40 UTC / 北京时间 15:40 | 补充上游 #6242 复现、#6389 默认关闭的整批回退与本地方案区别，并引用 #6 更新生产状态边界。 |
 
 ## 2026-11-09：保留 Luna，跳过明确拒答候选
 
@@ -14,7 +21,7 @@
 
 ## 2026-11-09：Q8 备选验证与恢复
 
-真实跨库请求在 Hindsight 的 Decision Model 精排阶段遇到拒答，安装版将其传播为整次 recall 的 HTTP 500。接口没有受支持的请求级关闭精排参数；rerank 对象的 prune/dedup 不能替代该能力。
+真实跨库请求在 Hindsight 的 Decision Model 精排阶段遇到拒答，补丁应用前的安装版将其传播为整次 recall 的 HTTP 500。接口没有受支持的请求级关闭精排参数；rerank 对象的 prune/dedup 不能替代该能力。
 
 公子批准仅为测试备选方案，将 `HINDSIGHT_API_RECALL_DECISION_MODEL_PROVIDER` 从 openai 改为 none，让 recall 使用已保留的 ONNX Q8。Q8 实际加载成功，但唯一一次双 bank 测试只有一库返回 35 条片段，另一库中继等待超时，最终判断为 unknown/openai_timeout；不能把加载成功当成备选通过。
 
@@ -59,6 +66,33 @@ OpenAI 官方指南当前使用 `POST /v1/decisions`、`gpt-6-luna`，提供 pre
 
 源码仍属 `vectorize-io/hindsight`；Win 补丁、部署和回退材料归 `CF-FE/herdr-4-codexcloud` 的 `mcp/hindsight-memory`，VPS 网关归 `ghyghoo8/create-network-sh`。本仓记录消费端现象、合同与验收，不复制 Hindsight 排序器。此文档补充不改变 provider、模型、并发、权限或运行配置。
 
+## 上游复现：共同路径与未知原因
+
+[Hindsight #6242](https://github.com/vectorize-io/hindsight/issues/6242) 是报告者在 1.1.0-slim/Linux 上的公开复现，另核对固定主线 `bc5ea195`。它与本项目 Win 1.2.0 的共同点是逐题拒答被排序链传播成整次 recall 失败，不代表输入、模型快照或拒答触发原因相同。
+
+- **公开输入的 provider 对照**：报告者用机器人转向题观察到原生 OpenAI 返回 HTTP 200，其中 choice 题 refusal、控制 predicate 正常；经 OpenRouter/System One 的同类请求则返回 HTTP 502，不带部分答案。缩短指令后两端均选到正确候选。这是特定输入的已报告现象，不是安全原因、证据不足或限流的根因证明；本次未重放该请求。
+- **排序链的离线复现**：另用合成 predicate 正常答案加 refusal，确认 `_from_openai()` → `DecisionModelReranker` 抛异常。报告中的生产排序为 Noul（映射到 OpenAI predicate），公开 Choice 题只复现 provider/适配器结果，不能当作同一生产候选池。
+- **重试放大是另一条路径**：报告的合成 System One 502 测试在默认 4 次重试下共尝试 5 次，直接 `DecisionRefusedError` 为 1 次。不能把这个计数套到本项目原生 OpenAI 请求；换成直连只能避开该 502 包装，并不单独消除拒答传播。
+- **限制反推**：报告者的中性 1/20/100/200 题对照通过，只能排除这些样例的一般批量不兼容。原生返回型号为 `gpt-6-luna`，OpenRouter 成功对照为带日期的型号名，未证明两路使用相同快照；不能据此断言所有生产输入或当前版本必然复现。
+
+结论是“有独立报告支持相同的异常传播机制”，不是“已找到 Luna 为什么拒答”。模型拒答触发原因仍未公开，本项目此前 429/峰值并发也仍缺少逐次可关联证据。[本地证据 #6](https://github.com/CF-FE/decision-service/issues/6)
+
+## 上游整批回退与本地局部拒答方案
+
+上游 [PR #6389](https://github.com/vectorize-io/hindsight/pull/6389) 于 **2026-11-06 11:45:21 UTC** 合并，合并提交为 [3d7d084](https://github.com/vectorize-io/hindsight/commit/3d7d084dd67ab27a5d3bda58aaa97dffe9fac554)，#6242 随之关闭。本次核对了实际 diff 与[维护者答复](https://github.com/vectorize-io/hindsight/issues/6242#issuecomment-6684062624)，不是仅按 Issue 已关闭推断功能。[7][8]
+
+| 边界 | 上游 #6389：整批 reranker fallback | 本地 #6：局部拒答隔离 |
+| --- | --- | --- |
+| 启用与触发 | 服务级 `HINDSIGHT_API_RECALL_DECISION_MODEL_FALLBACK`，**默认 false**。显式开启后，Decision Model 排序失败/拒答且原重试结束，才回退。 | 固定 Win 1.2.0 补丁，仅对 OpenAI recall 候选排序识别明确的逐题 refusal。 |
+| 候选与模型 | 配置的 `HINDSIGHT_API_RERANKER_*`（含 failover chain）从头重新排序该次整批候选；不是只跳过被拒题。 | 继续使用 Luna，保留正常答案，仅移除明确拒答候选；真实零概率仍按正常答案处理。 |
+| 排序语义 | 使用 fallback 自己的输入对与每条记忆上下文，并记录实际 serving provider；cross-encoder 的 recency/temporal/proof-count boosts 恢复，Decision Model 的 prune/dedup 不用于该 fallback。 | 保留存活候选的原排序/筛选语义及原索引；dedup 仅看存活池，去重题拒答仍严格失败。 |
+| 初始化与重试 | fallback 在启动时初始化，避免失败请求中才下载本地模型；**502 重试保持不变**。 | HTTP 错误、超时、原重试与窗口二分沿既有路径处理；不把失败或缺答当部分成功。 |
+| 全拒答与其他调用 | 开启后可进入整个 reranker 回退；回退本身仍可能失败，不保证成功。 | 跨批汇总后全拒答仍明确失败；普通 predict、consolidation 等调用保留原严格拒答行为。 |
+
+本地固定交付为 [Herdr 49e48b5](https://github.com/CF-FE/herdr-4-codexcloud/commit/49e48b5c6a8a23d90d68a53dafbe9a37b680c6b3)，补丁、源哈希锁、14 个合成回归与部署/回退说明均归 [decision-reranker 目录](https://github.com/CF-FE/herdr-4-codexcloud/tree/49e48b5c6a8a23d90d68a53dafbe9a37b680c6b3/mcp/hindsight-memory/decision-reranker)。其目标是保住有明确正常判断的候选，不是移植 #6389 或自动采用 Q8。
+
+**发布与安装不能混推。** #6389 合入上游不证明某个包或当前 Win 已包含它。固定 `34a1386` 的 [reranker 构造](https://github.com/vectorize-io/hindsight/blob/34a138684a899b6ec34175f7a2b633860466d289/hindsight-api-slim/hindsight_api/engine/search/reranking.py#L320-L342)仍是 Decision Model 直接替换普通 reranker，没有该 fallback 接线；本地补丁也没有引入整批 fallback。以后评估上游升级时须核版本、源码与实际配置，不能只补一个环境变量就宣称启用，更不能把两方案混称“官方单条跳过”。
+
 ## 2026-11-08 首次启用配置
 
 本次在原实例选用以下非秘密配置，普通 LLM、embedding 及原 Q8 精排配置保留：
@@ -99,7 +133,7 @@ HINDSIGHT_API_REFLECT_DECISION_MODEL_PROVIDER=none
 
 provider、模型类型/型号及适用强度按各自调用链记录；原生不提供强度参数时标不适用。消耗只记录现成数据，缺失留缺省，不记录现金费用。身份/数据权限继续由服务端控制；共享供应商不意味着共享所有 bank 或扩大数据传输范围。
 
-当前官方故障语义有一项区别：consolidation 的 Decision Model 失败可退回原 LLM；recall 将它作为 ranker，远程调用重试后仍失败会导致 recall 失败，不能承诺自动退回 Q8 精排。[1] 原精排配置保留用于显式恢复。
+故障语义需带版本和配置：consolidation 的 Decision Model 失败可退回原 LLM；recall 默认仍显露排序失败。上游 #6389 仅在显式启用新服务级开关后使用配置的 reranker 回退，本地当前采用的是上述局部拒答补丁，不能承诺自动退回 Q8。[1][7] 原精排配置保留用于显式恢复。
 
 ## 与反馈回收设计的关系
 
@@ -110,7 +144,7 @@ Decision Models 可优化记忆处理成本，但不是 ground truth、审批或
 ## 证据边界与来源
 
 已核对：官方在线合同；现有 Hindsight API Slim 1.2.0 的 provider 默认表、实际 OpenAI 请求适配和操作级继承；一次 Luna 样例、配置写入/解析、原入口重载、新 API 健康及 PG/BGE 保全。秘密值不进入文档。
-尚未完成：真实业务 recall/consolidation 与端到端质量、延迟、token 收益验证；单次调用不证明长期额度、稳定性或其他模型权限，也未据此确定最低兼容版本。
+后续运行证据：#6 已记录局部补丁部署及一次真实双库 recall/最终判断通过，见上文；尚未完成自然业务质量、consolidation 效果、长期延迟和 token 收益验证。单次调用不证明长期额度、稳定性或其他模型权限，也未据此确定最低兼容版本。
 
 1. [Hindsight Decision Models](https://hindsight.vectorize.io/developer/decision-models)
 2. [Hindsight Models：OpenAI Decisions](https://hindsight.vectorize.io/developer/models#openai-decisions)
@@ -118,3 +152,5 @@ Decision Models 可优化记忆处理成本，但不是 ground truth、审批或
 4. [OpenAI Decisions API 指南](https://developers.openai.com/api/docs/guides/decisions)
 5. [OpenAI Decisions 请求与返回 schema](https://developers.openai.com/api/reference/resources/decisions/methods/create)
 6. [Hindsight 固定版本 `_from_openai` 拒答处理](https://github.com/vectorize-io/hindsight/blob/34a138684a899b6ec34175f7a2b633860466d289/hindsight-api-slim/hindsight_api/engine/decision_model.py#L162-L178)
+7. [Hindsight PR #6389：默认关闭的整批 reranker fallback](https://github.com/vectorize-io/hindsight/pull/6389)
+8. [Hindsight #6242：公开复现与维护者处理说明](https://github.com/vectorize-io/hindsight/issues/6242)
