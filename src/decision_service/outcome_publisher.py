@@ -17,7 +17,7 @@ from uuid import NAMESPACE_URL, uuid5
 import httpx
 from pydantic import BaseModel, ConfigDict, Field, SecretStr, ValidationError
 
-from .models import Feedback
+from .models import Feedback, usage_without_cash
 from .settings import Name
 from .storage import canonical
 
@@ -60,6 +60,8 @@ class OutcomePublisher:
         if feedback.kind != "result" or feedback.project_id != self.config.project_id:
             raise PublicationError("publication_scope_mismatch")
         payload = feedback.model_dump(exclude_unset=True)
+        if "usage" in payload["payload"]:
+            payload["payload"]["usage"] = usage_without_cash(payload["payload"]["usage"])
         key = (self.config.caller_scope, feedback.project_id, feedback.event_id, feedback.revision)
         encoded = canonical(payload)
         binding = {"record_type": "decision_outcome", "bank_id": self.config.bank_id,
@@ -75,7 +77,7 @@ class OutcomePublisher:
             db.execute("""CREATE TABLE IF NOT EXISTS publications (
                 scope TEXT NOT NULL, project TEXT NOT NULL, event TEXT NOT NULL, revision INTEGER NOT NULL,
                 bank TEXT NOT NULL, payload TEXT NOT NULL, original TEXT NOT NULL, document TEXT NOT NULL,
-                operation TEXT NOT NULL, phase TEXT NOT NULL DEFAULT 'ready',
+                operation TEXT NOT NULL, phase TEXT NOT NULL DEFAULT 'ready', compensation_after REAL NOT NULL DEFAULT 0,
                 PRIMARY KEY(scope, project, event, revision))""")
             db.execute("""INSERT INTO publications(scope, project, event, revision, bank, payload, original, document, operation)
                 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING""",
@@ -93,6 +95,19 @@ class OutcomePublisher:
                 WHERE (scope, project, event, revision, phase) = (?, ?, ?, ?, ?)""",
                 (phase, *key, previous)).rowcount == 1
 
+    def compensate(self, key, document, path):
+        now = datetime.now(timezone.utc).timestamp()
+        with closing(sqlite3.connect(self.config.state)) as db, db:
+            reserved = db.execute("""UPDATE publications SET compensation_after = ?
+                WHERE (scope, project, event, revision) = (?, ?, ?, ?) AND compensation_after <= ?""",
+                (now + 300, *key, now)).rowcount == 1
+        if not reserved:
+            return False
+        ack = self.request("POST", path, self.config.decision_service_token)
+        if ack.get("accepted") is not True or ack.get("document_id") != document:
+            raise PublicationError("publication_compensation_unknown")
+        return True
+
     def request(self, method, url, token, body=None):
         try:
             response = self.http.request(method, url, headers={"Authorization": "Bearer " + token.get_secret_value()},
@@ -106,11 +121,26 @@ class OutcomePublisher:
 
     def gateway(self, action, operation, **arguments):
         bank = self.config.bank_id
+        request_args = {"bank_id": bank, "operation_id": operation, **arguments}
         result = self.request("POST", self.config.gateway_url.rstrip("/") + "/api", self.config.gateway_token, {
-            "tool": action, "arguments": {"bank_id": bank, "operation_id": operation, **arguments},
+            "tool": action, "arguments": request_args,
             "timeout_seconds": self.config.timeout_seconds,
         })
         receipt = result.get("structuredContent")
+        if action == "retain" and result.get("isError") is True:
+            if receipt is None and result.get("content") == [{"type": "text", "text": "BUSY: no upstream action started"}]:
+                return {"state": "NOT_SUBMITTED", "request_started": False}
+            metadata = result.get("_meta")
+            trace = metadata.get("hindsight_gateway") if isinstance(metadata, dict) else None
+            if (isinstance(receipt, dict) and receipt.get("state") == "UNAVAILABLE"
+                    and receipt.get("operation_id") == operation and receipt.get("document_id") == arguments["document_id"]
+                    and isinstance(trace, dict) and trace.get("operation_id") == operation
+                    and trace.get("document_id") == arguments["document_id"]
+                    and trace.get("request_sha256") == sha256(canonical(request_args).encode()).hexdigest()
+                    and isinstance(attempts := trace.get("attempts"), list) and attempts
+                    and all(isinstance(attempt, dict) and attempt.get("request_may_have_started") is False
+                            for attempt in attempts)):
+                return {"state": "NOT_SUBMITTED", "request_started": False}
         if (not isinstance(receipt, dict) or receipt.get("action") != action or receipt.get("bank_id") != bank
                 or receipt.get("operation_id") != operation
                 or ("document_id" in arguments and receipt.get("document_id") != arguments["document_id"])):
@@ -137,7 +167,19 @@ class OutcomePublisher:
                     return {**result, "state": "recorded", "receipt_id": receipt, "received": True}
                 if receipts:
                     raise PublicationError("publication_inbox_conflict")
-                return {**result, "state": "awaiting_inbox", "inbox_states": sorted({str(row.get("state")) for row in rows})}
+                states = {row.get("state") for row in rows if isinstance(row.get("state"), str)}
+                reasons = sorted({row["reason"] for row in rows if isinstance(row.get("reason"), str)})
+                detail = {**result, "inbox_states": sorted(states), "inbox_reasons": reasons}
+                if "rejected" in states:
+                    return {**detail, "state": "rejected"}
+                if "pending" in states:
+                    return {**detail, "state": "awaiting_inbox"}
+                if states and states <= {"access_blocked", "retry_exhausted"}:
+                    state = "access_blocked" if "access_blocked" in states else "retry_exhausted"
+                    if self.compensate(key, document, path):
+                        state = "compensation_queued"
+                    return {**detail, "state": state}
+                raise PublicationError("publication_inbox_unknown")
 
             status = self.gateway("get_operation", operation)
             if status.get("state") == "RESPONSE" and status.get("http_status") == 200:
@@ -152,10 +194,8 @@ class OutcomePublisher:
                         completed = datetime.fromisoformat(body["completed_at"])
                     except ValueError:
                         raise PublicationError("publication_operation_unknown") from None
-                    if completed.utcoffset() is not None and datetime.now(timezone.utc) - completed >= timedelta(minutes=2):
-                        ack = self.request("POST", path, config.decision_service_token)
-                        if ack.get("accepted") is not True or ack.get("document_id") != document:
-                            raise PublicationError("publication_compensation_unknown")
+                    if (completed.utcoffset() is not None and datetime.now(timezone.utc) - completed >= timedelta(minutes=2)
+                            and self.compensate(key, document, path)):
                         return {**result, "state": "compensation_queued"}
                 return {**result, "state": "awaiting_webhook" if state == "completed" else state}
             if status.get("state") != "RESPONSE" or status.get("http_status") != 404:
@@ -191,8 +231,18 @@ def main():
     os.umask(0o077)
     try:
         config = PublisherConfig.model_validate_json(args.config.read_bytes())
+        original_url = os.getenv("DECISION_SERVICE_URL")
+        original_token = os.getenv("DECISION_SERVICE_TOKEN")
+        if original_url is not None or original_token is not None:
+            if (original_url is None or original_url.rstrip("/") != config.decision_service_url.rstrip("/")
+                    or original_token is None or not hmac.compare_digest(
+                        original_token.encode(), config.decision_service_token.get_secret_value().encode())):
+                raise PublicationError("publication_decision_client_mismatch")
         with httpx.Client(timeout=config.timeout_seconds, trust_env=False, follow_redirects=False) as http:
             print(canonical(OutcomePublisher(config, http).publish(json.load(sys.stdin))))
+    except PublicationError as error:
+        print(canonical({"state": "unknown", "reason": str(error)}))
+        return 1
     except (OSError, sqlite3.Error, ValidationError, ValueError, RecursionError):
         # Never echo submitted bodies or values from the private configuration.
         print('{"state":"unknown","reason":"publication_input_or_state_error"}')
