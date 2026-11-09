@@ -120,6 +120,14 @@ document_id = "decision-outcome-v1-" + hashlib.sha256(original_text.encode("utf-
 
 暂时读取失败按 5/30/120 秒退避，进程重启恢复未完成项。补偿入口接收原发布者索引里的精确文档 ID。现有 VPS 网关允许 `get_document`，全库遗漏发现仍需单独接入发布者索引或获准的时间窗枚举。凡人已登记生产 webhook。该安装版 Hindsight 异步 retain 返回父 operation，回调使用执行该文档的子 operation。保留两者与文档、通知 ID 的对应关系。
 
+#### 工作流发布器
+
+工作流可将原检查点冻结的 `result` JSON 交给 `python -m decision_service.outcome_publisher --config <private-config>` 的标准输入。配置绑定 `project_id`、`bank_id`、原 `caller_scope`、`producer_secret`、`gateway_url`/`gateway_token`、`decision_service_url`/`decision_service_token`、绝对路径 `state` 和可选 `timeout_seconds`。`state` 指向执行端私有目录里的发布索引 SQLite。网关凭据由发布者持有，只授权目标 bank 的 retain 与对账。服务端继续使用已有的只读凭据。
+
+发布器在首次发送前按服务的共同规则去掉现金用量字段，并冻结每个事件修订的原文、文档 ID 和父 operation ID。同修订的语义输入变更会报冲突。原 operation 受理或完成时，源检查点继续把反馈留在待传状态，直至 Decision Service 返回 `recorded` 和 `receipt_id`。请求结果不明时只查原 operation。网关明确未向上游提交时，下一轮沿相同 ID 和原文重试。若原 operation 完成满两分钟且没有 inbox 记录，或 inbox 读取权限被阻挡或已耗尽重试，按冻结的文档 ID 请求补偿。对同一修订的补偿至少间隔五分钟，`rejected` 保留原拒绝理由。
+
+接入方在业务状态写入之后调用发布器，并在原对账周期重试待传事件。对选择本路径的新单元，应用事件仍可直传，`result` 与后续质量修订走同一 Hindsight 路径。发布完成前的 `unknown`、`submitted` 等状态不生成反馈回执，也不触发业务重跑。已确认未发送和原 operation 仍不可见是两种状态。只有原发布者能用可核原生依据处置长期不可见的发送意图。
+
 ### 接入与演进边界
 
 保留“结果放对应项目 bank，decision-service 按授权读取回收”的方向，增加精确原文读取和最小确定性处理账本：

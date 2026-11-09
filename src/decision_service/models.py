@@ -1,3 +1,4 @@
+import re
 from datetime import datetime
 from typing import Annotated, Literal, Self
 
@@ -8,6 +9,24 @@ from .settings import Name
 JSONObject = dict[str, JsonValue]
 Revision = Annotated[int, Field(gt=0, le=2**63 - 1)]
 Version = Annotated[int, Field(ge=1, le=1)]
+
+
+CASH_USAGE_TERMS = {"cash", "cost", "costs", "price", "pricing", "currency",
+                    "usd", "eur", "cny", "fee", "fees", "dollar", "dollars"}
+
+
+def usage_without_cash(value):
+    # Preserve usage from the source while excluding monetary fields.
+    if isinstance(value, dict):
+        return {
+            key: usage_without_cash(item)
+            for key, item in value.items()
+            if CASH_USAGE_TERMS.isdisjoint(re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", key)
+                                          .lower().replace("-", "_").split("_"))
+        }
+    if isinstance(value, list):
+        return [usage_without_cash(item) for item in value]
+    return value
 
 
 class StrictModel(BaseModel):

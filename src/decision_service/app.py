@@ -1,7 +1,6 @@
 import hmac
 import json
 import logging
-import re
 import sqlite3
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -19,7 +18,7 @@ from .coverage import coverage_for, merge_execution_refs
 from .errors import APIError, ERRORS, error_payload
 from .hindsight_outcomes import OutcomeInbox
 from .mcp_entry import DecisionMCPEndpoint
-from .models import Evaluate, Feedback
+from .models import Evaluate, Feedback, usage_without_cash
 from .oauth import DecisionOAuth
 from .oauth_storage import OAuthStorageFull
 from .settings import Caller, Settings
@@ -36,28 +35,11 @@ PRESETS = {
     "role_model_selection": {"version": 1, "kind": "choice", "empty_disposition": "unavailable"},
 }
 
-CASH_USAGE_TERMS = {"cash", "cost", "costs", "price", "pricing", "currency",
-                    "usd", "eur", "cny", "fee", "fees", "dollar", "dollars"}
-
 
 def error_response(code, **refs):
     status, _ = ERRORS[code]
     headers = {"WWW-Authenticate": "Bearer"} if status == 401 else None
     return JSONResponse(error_payload(code, **refs), status, headers=headers)
-
-
-def usage_without_cash(value):
-    # Preserve usage from the source while excluding monetary fields.
-    if isinstance(value, dict):
-        return {
-            key: usage_without_cash(item)
-            for key, item in value.items()
-            if CASH_USAGE_TERMS.isdisjoint(re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", key)
-                                          .lower().replace("-", "_").split("_"))
-        }
-    if isinstance(value, list):
-        return [usage_without_cash(item) for item in value]
-    return value
 
 
 def create_app(settings: Settings | None = None, *, retrieve=None, decide=None):
