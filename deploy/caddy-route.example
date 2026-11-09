@@ -1,0 +1,15 @@
+# Insert in the existing route block, ahead of its catch-all proxy.
+@decision_service_home path /decision-service /decision-service/
+redir @decision_service_home /decision-service/health 302
+@decision_oauth_metadata path /.well-known/oauth-authorization-server/decision-service /.well-known/openid-configuration/decision-service /.well-known/oauth-protected-resource/decision-service/mcp
+reverse_proxy @decision_oauth_metadata 127.0.0.1:8768
+@decision_service path /decision-service/health /decision-service/mcp /decision-service/v1/decisions /decision-service/v1/decisions/* /decision-service/v1/decision-feedback /decision-service/authorize /decision-service/token /decision-service/register /decision-service/auth/callback /decision-service/consent
+handle @decision_service {
+    uri strip_prefix /decision-service
+    request_body {
+        max_size 4MB
+    }
+    reverse_proxy 127.0.0.1:8768 {
+        header_up X-Forwarded-Proto https
+    }
+}

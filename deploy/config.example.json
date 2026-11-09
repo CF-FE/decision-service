@@ -1,0 +1,8 @@
+{
+  "db_path": "/var/lib/decision-service/decision.sqlite3",
+  "callers": {},
+  "service_bank_ids": [],
+  "default_banks": {},
+  "mcp_allowed_hosts": ["decision.example.org"],
+  "mcp_allowed_origins": []
+}

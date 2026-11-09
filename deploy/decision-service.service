@@ -1,0 +1,37 @@
+[Unit]
+Description=Decision Service HTTP and MCP
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=decision-service
+Group=decision-service
+WorkingDirectory=/opt/decision-service/current
+StateDirectory=decision-service
+StateDirectoryMode=0700
+LoadCredential=config.json:/etc/decision-service/config.json
+LoadCredential=openai-api-key:/etc/decision-service/openai.key
+LoadCredential=hindsight-api-key:/etc/decision-service/hindsight.key
+LoadCredential=github-client-id:/etc/decision-service/github-client-id.key
+LoadCredential=github-client-secret:/etc/decision-service/github-client-secret.key
+LoadCredential=oauth-signing-key:/etc/decision-service/oauth-signing.key
+Environment=DECISION_SERVICE_CONFIG=%d/config.json
+Environment=DECISION_SERVICE_OPENAI_API_KEY_FILE=%d/openai-api-key
+Environment=DECISION_SERVICE_HINDSIGHT_API_KEY_FILE=%d/hindsight-api-key
+Environment=DECISION_SERVICE_OAUTH_CLIENT_ID_FILE=%d/github-client-id
+Environment=DECISION_SERVICE_OAUTH_CLIENT_SECRET_FILE=%d/github-client-secret
+Environment=DECISION_SERVICE_OAUTH_SIGNING_KEY_FILE=%d/oauth-signing-key
+ExecStart=/opt/decision-service/current/.venv/bin/python -B -m uvicorn decision_service.app:create_app --factory --host 127.0.0.1 --port 8768 --workers 1 --no-access-log
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=25
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target
