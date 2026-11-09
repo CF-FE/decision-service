@@ -64,7 +64,7 @@ Hindsight recall 用于召回经验；具体结果按原 ID 和引用精确关�
 
 原 workflow/角色创建与执行适配器继续直传应用和结果。对已采用 Hindsight 发布结果的项目，P3 提供 retain.completed webhook → 持久 inbox → get_document 原文 → 发布者和修订校验 → 原反馈账本。无需迁移业务结果库或强制双写。consolidation 完成、抽取完成、业务成功和决策正确必须分开。
 
-凡人单 bank 已通过生产端到端验证，涵盖 Win 原生回调、VPS 精确原文读取、按文档 ID 补偿和重启读回。生产者由受控命令触发。其他 bank、工作流自动发布和全库遗漏发现仍待接入。[回收合同与能力边界](outcome-feedback.md)
+凡人单 bank 已通过生产端到端验证，涵盖 Win 原生回调、VPS 精确原文读取、按文档 ID 补偿和重启读回。历史回顾结果由受控命令发布；凡人工作流已自动发布原收件及后续质量修订。新单元的受管绑定已安装和读回，实际采用随获准的新单元验证。其他 bank 与全库遗漏发现仍待接入。[回收合同与能力边界](outcome-feedback.md) · [当前部署](deployment.md)
 
 ## 内部 Decision Models 与业务决策分层
 
