@@ -32,16 +32,23 @@ def test_local_marketplace_contains_the_skill_and_native_auth(tmp_path, extra_ar
     assert mcp["mcpServers"]["decision-service"] == {"url": ENDPOINT, **credentials}
 
 
-def test_cloud_update_preserves_native_app_binding_and_presentation(tmp_path):
+@pytest.mark.parametrize("source_version,source_skills,next_version", [
+    ("1.0.0", {}, "1.0.1"),
+    ("1.0.2", {"skills": "./skills", "keywords": []}, "1.0.3"),
+])
+def test_cloud_update_preserves_native_app_binding_and_presentation(
+    tmp_path, source_version, source_skills, next_version
+):
     native_manifest = tmp_path / "native-plugin.json"
     native_app = tmp_path / "native-app.json"
     archive = tmp_path / "decision-service-skill.zip"
     source = {
         "name": "app-fixture",
-        "version": "1.0.0",
+        "version": source_version,
         "description": "Native private MCP App",
         "apps": "./.app.json",
-        "interface": {"displayName": "Decision Service", "defaultPrompt": ["First", "Second"]},
+        "interface": {"displayName": "Decision Service Cloud", "defaultPrompt": ["First", "Second"]},
+        **source_skills,
     }
     native_manifest.write_text(json.dumps(source), encoding="utf-8")
     native_app.write_text(json.dumps({"apps": {"fixture": {"id": "asdk_app_fixture"}}}), encoding="utf-8")
@@ -59,9 +66,9 @@ def test_cloud_update_preserves_native_app_binding_and_presentation(tmp_path):
         legacy = json.loads(package.read(".codex-plugin/plugin.json"))
         assert package.read("skills/decision-service/SKILL.md") == SKILL.read_bytes()
     assert manifest["name"] == source["name"]
-    assert manifest["version"] == "1.0.1"
+    assert manifest["version"] == next_version
     assert manifest["extensions"]["com.openai"] == {"apps": source["apps"], "interface": source["interface"]}
-    assert legacy == {**source, "version": "1.0.1", "skills": "./skills/"}
+    assert legacy == {**source, "version": next_version, "skills": source.get("skills", "./skills/")}
 
 
 @pytest.mark.parametrize("url", [

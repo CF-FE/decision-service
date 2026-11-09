@@ -19,6 +19,8 @@ rtk proxy codex mcp login decision-service
 
 本地包使用 Codex 兼容 manifest 和 `.mcp.json`。默认使用 Codex 的 OAuth 凭据存储。完成登录后，在新开的本地 Desktop 会话和 CLI 分别检查 `decision-service` 工具，并按获准的 `request_id` 运行一次 `get_decision`。CLI 安装回执、工具发现和查询结果分别核对。参见 [Codex 插件命令](https://learn.chatgpt.com/docs/developer-commands) 和 [Codex MCP 配置](https://learn.chatgpt.com/docs/extend/mcp)。
 
+更新已安装的本地 Skill 时，提升本地 manifest 的补丁版本，将新 manifest 和 Skill 同步到已注册的 marketplace 源目录，再运行 `rtk proxy codex plugin add decision-service@cf-fe-decision-local`。沿用原 MCP 配置与 OAuth 登录，并从安装结果核对版本和 Skill 内容。
+
 对已有安全凭据注入的本地调用进程，可用 `--auth bearer` 构建环境变量版本。进程从 `DECISION_SERVICE_MCP_TOKEN` 读取 caller token。该版本的安装验证限于实际获得变量的进程。
 
 ## 私有云端插件
@@ -33,7 +35,7 @@ rtk proxy .venv/bin/python plugin/package_plugin.py cloud-skill \
   --output "$ARCHIVE_PATH"
 ```
 
-这个 ZIP 用于更新同一原生插件，使用当前原生 manifest 生成可读取 Skill 的新版本，并引用原有 `.app.json`。原生绑定由已有发布保留。Task Mailbox 已在同一账号验证过原生 App 路径，其初版直接打包的 MCP 插件曾显示为仅限桌面。参见 [原生创建步骤](https://developers.openai.com/plugins/build/plugins#create-and-test-a-plugin-locally-with-an-mcp-server) 和 [Task Mailbox 接入记录](https://github.com/ghyghoo8/create-network-sh/blob/main/fastmcp/task-mailbox/clients/README.md)。
+这个 ZIP 用于更新同一原生插件，引用原有 `.app.json`。首次挂载 Skill 及后续更新都应从当前发布读取 manifest。兼容清单中的 `./skills` 和 `./skills/` 都可用于打包，已有路径原样保留。Task Mailbox 已在同一账号验证过原生 App 路径，其初版直接打包的 MCP 插件曾显示为仅限桌面。参见 [原生创建步骤](https://developers.openai.com/plugins/build/plugins#create-and-test-a-plugin-locally-with-an-mcp-server) 和 [Task Mailbox 接入记录](https://github.com/ghyghoo8/create-network-sh/blob/main/fastmcp/task-mailbox/clients/README.md)。
 
 ## 验证
 

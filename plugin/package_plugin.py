@@ -67,7 +67,7 @@ def package_cloud_skill(output, native_manifest, native_app, skill):
         not isinstance(manifest, dict)
         or set(manifest) - metadata_fields - {"interface", "apps", "skills"}
         or manifest.get("apps") != "./.app.json"
-        or manifest.get("skills", "./skills/") != "./skills/"
+        or manifest.get("skills", "./skills/") not in ("./skills", "./skills/")
         or not isinstance(manifest.get("name"), str)
         or not isinstance(manifest.get("interface"), dict)
     ):
@@ -86,7 +86,8 @@ def package_cloud_skill(output, native_manifest, native_app, skill):
     if not isinstance(version, str) or not re.fullmatch(r"(?:0|[1-9][0-9]*)(?:\.(?:0|[1-9][0-9]*)){2}", version):
         raise ValueError("expected a stable semantic version in the native manifest")
     major, minor, patch = version.split(".")
-    manifest.update(version=f"{major}.{minor}.{int(patch) + 1}", skills="./skills/")
+    manifest["version"] = f"{major}.{minor}.{int(patch) + 1}"
+    manifest.setdefault("skills", "./skills/")
     portable = {
         "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
         **{key: manifest[key] for key in manifest if key in metadata_fields},
