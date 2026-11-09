@@ -17,6 +17,7 @@ from starlette.routing import Route
 
 from .coverage import coverage_for, merge_execution_refs
 from .errors import APIError, ERRORS, error_payload
+from .hindsight_outcomes import OutcomeInbox
 from .mcp_entry import DecisionMCPEndpoint
 from .models import Evaluate, Feedback
 from .oauth import DecisionOAuth
@@ -67,7 +68,7 @@ def create_app(settings: Settings | None = None, *, retrieve=None, decide=None):
 
     @asynccontextmanager
     async def lifespan(_app):
-        async with mcp.manager.run():
+        async with mcp.manager.run(), outcomes.run():
             yield
 
     app = FastAPI(title="Decision Service", version="1.0", docs_url=None, redoc_url=None,
@@ -321,8 +322,7 @@ def create_app(settings: Settings | None = None, *, retrieve=None, decide=None):
     def by_id(decision_id: str, caller: Annotated[Caller, Depends(authenticate)]):
         return read_decision(caller, decision_id=decision_id)
 
-    @app.post("/v1/decision-feedback")
-    def record_feedback(event: Feedback, caller: Annotated[Caller, Depends(authenticate)]):
+    def persist_feedback(conn, event: Feedback, caller: Caller):
         if event.project_id is not None and event.project_id not in caller.project_ids:
             raise APIError("forbidden_scope")
         data = event.model_dump(exclude_unset=True)
@@ -338,78 +338,84 @@ def create_app(settings: Settings | None = None, *, retrieve=None, decide=None):
         identity = (caller.caller_scope, event.project_id or "", event.event_id)
         receipt_id = str(uuid4())
         duplicate = False
-        with store.transaction(write=True) as conn:
-            existing = conn.execute("""
-                SELECT revision, receipt_id, body FROM feedback WHERE scope = ? AND project_id = ? AND event_id = ?
-            """, identity).fetchall()
-            for prior in existing:
-                if prior["revision"] == event.revision:
-                    if prior["body"] != body_json:
-                        raise APIError("revision_conflict")
-                    receipt_id, duplicate = prior["receipt_id"], True
-                    break
-            for decision_id in event.decision_ids:
-                row = conn.execute("""
-                    SELECT * FROM decisions WHERE id = ? AND scope = ? AND project_id IS ?
-                """, (decision_id, caller.caller_scope, event.project_id)).fetchone()
-                if row is None or not can_read(row, caller):
-                    raise APIError("not_found")
-                if event.kind == "correction":
-                    continue
-                frozen = json.loads(row["frozen"])["request"]
-                decision = json.loads(row["record"])
-                subject = frozen.get("subject_ref") or {}
-                if any(
-                    event.subject_ref.get(key) != subject[key]
-                    for key in ("task_id", "unit_id", "unit_id_source") if key in subject
-                ) or any(
-                    event.subject_ref[key] != subject[key]
-                    for key in ("step", "source_sha256", "input_sha256") if key in subject and key in event.subject_ref
+        existing = conn.execute("""
+            SELECT revision, receipt_id, body FROM feedback WHERE scope = ? AND project_id = ? AND event_id = ?
+        """, identity).fetchall()
+        for prior in existing:
+            if prior["revision"] == event.revision:
+                if prior["body"] != body_json:
+                    raise APIError("revision_conflict")
+                receipt_id, duplicate = prior["receipt_id"], True
+                break
+        for decision_id in event.decision_ids:
+            row = conn.execute("""
+                SELECT * FROM decisions WHERE id = ? AND scope = ? AND project_id IS ?
+            """, (decision_id, caller.caller_scope, event.project_id)).fetchone()
+            if row is None or not can_read(row, caller):
+                raise APIError("not_found")
+            if event.kind == "correction":
+                continue
+            frozen = json.loads(row["frozen"])["request"]
+            decision = json.loads(row["record"])
+            subject = frozen.get("subject_ref") or {}
+            if any(
+                event.subject_ref.get(key) != subject[key]
+                for key in ("task_id", "unit_id", "unit_id_source") if key in subject
+            ) or any(
+                event.subject_ref[key] != subject[key]
+                for key in ("step", "source_sha256", "input_sha256") if key in subject and key in event.subject_ref
+            ):
+                raise APIError("invalid_request")
+            if event.kind == "application":
+                if event.payload["recommended_candidate_id"] != decision["candidate_id"]:
+                    raise APIError("invalid_request")
+                if event.payload["application_status"] == "applied" and (
+                    decision["status"] != "complete" or decision["disposition"] != "suggested"
+                    or event.payload["effective_candidate_id"] != decision["candidate_id"]
                 ):
                     raise APIError("invalid_request")
-                if event.kind == "application":
-                    if event.payload["recommended_candidate_id"] != decision["candidate_id"]:
+                if frozen.get("preset") == "role_model_selection":
+                    if not {"recommended_model", "launch_model", "effective_model"} <= event.payload.keys():
                         raise APIError("invalid_request")
                     if event.payload["application_status"] == "applied" and (
-                        decision["status"] != "complete" or decision["disposition"] != "suggested"
-                        or event.payload["effective_candidate_id"] != decision["candidate_id"]
+                        (event.payload.get("effective_model") or {}).get("configuration_status") != "confirmed"
                     ):
                         raise APIError("invalid_request")
-                    if frozen.get("preset") == "role_model_selection":
-                        if not {"recommended_model", "launch_model", "effective_model"} <= event.payload.keys():
-                            raise APIError("invalid_request")
-                        if event.payload["application_status"] == "applied" and (
-                            (event.payload.get("effective_model") or {}).get("configuration_status") != "confirmed"
-                        ):
-                            raise APIError("invalid_request")
-                elif frozen.get("preset") == "role_model_selection" and "effective_model" not in event.payload:
-                    raise APIError("invalid_request")
+            elif frozen.get("preset") == "role_model_selection" and "effective_model" not in event.payload:
+                raise APIError("invalid_request")
 
-            if not duplicate:
-                for prior in existing:
-                    old = json.loads(prior["body"])
-                    if (
-                        old["kind"] != event.kind
-                        or any(old["subject_ref"].get(key) != event.subject_ref.get(key)
-                               for key in ("task_id", "unit_id", "unit_id_source"))
-                        or (event.kind != "result" and set(old["decision_ids"]) != set(event.decision_ids))
-                        or not merge_execution_refs((old.get("execution_ref"), data.get("execution_ref")))[1]
-                        or ((old.get("coverage_observation") or {}).get("scope_ref")
-                            != (data.get("coverage_observation") or {}).get("scope_ref"))
-                    ):
-                        raise APIError("revision_conflict")
-                conn.execute("""
-                    INSERT INTO feedback (scope, project_id, event_id, revision, receipt_id, body)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (*identity, event.revision, receipt_id, body_json))
-                conn.executemany("""
-                    INSERT INTO feedback_decisions (decision_id, receipt_id) VALUES (?, ?)
-                """, ((decision_id, receipt_id) for decision_id in event.decision_ids))
+        if not duplicate:
+            for prior in existing:
+                old = json.loads(prior["body"])
+                if (
+                    old["kind"] != event.kind
+                    or any(old["subject_ref"].get(key) != event.subject_ref.get(key)
+                           for key in ("task_id", "unit_id", "unit_id_source"))
+                    or (event.kind != "result" and set(old["decision_ids"]) != set(event.decision_ids))
+                    or not merge_execution_refs((old.get("execution_ref"), data.get("execution_ref")))[1]
+                    or ((old.get("coverage_observation") or {}).get("scope_ref")
+                        != (data.get("coverage_observation") or {}).get("scope_ref"))
+                ):
+                    raise APIError("revision_conflict")
+            conn.execute("""
+                INSERT INTO feedback (scope, project_id, event_id, revision, receipt_id, body)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (*identity, event.revision, receipt_id, body_json))
+            conn.executemany("""
+                INSERT INTO feedback_decisions (decision_id, receipt_id) VALUES (?, ?)
+            """, ((decision_id, receipt_id) for decision_id in event.decision_ids))
         return {"receipt_id": receipt_id, "event_id": event.event_id, "revision": event.revision,
                 "received": True, "duplicate": duplicate}
 
+    @app.post("/v1/decision-feedback")
+    def record_feedback(event: Feedback, caller: Annotated[Caller, Depends(authenticate)]):
+        with store.transaction(write=True) as conn:
+            return persist_feedback(conn, event, caller)
+
     oauth = (DecisionOAuth(settings.github_oauth, settings.callers, settings.db_path.parent / "oauth")
              if settings.github_oauth else None)
+    outcomes = OutcomeInbox(settings, store, persist_feedback)
+    outcomes.mount(app, authenticate)
     mcp = DecisionMCPEndpoint(settings, caller_for_bearer, evaluate, read_decision, record_feedback, oauth)
     app.router.routes.append(Route("/mcp", endpoint=mcp, methods=["GET", "POST", "DELETE"]))
     if oauth is not None:

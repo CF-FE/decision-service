@@ -44,6 +44,26 @@ class Store:
                     receipt_id TEXT NOT NULL REFERENCES feedback(receipt_id),
                     PRIMARY KEY (decision_id, receipt_id)
                 );
+                CREATE TABLE IF NOT EXISTS hindsight_inbox (
+                    bank_id TEXT NOT NULL,
+                    project_id TEXT NOT NULL,
+                    caller_scope TEXT NOT NULL,
+                    source TEXT NOT NULL,
+                    delivery_key TEXT NOT NULL,
+                    document_id TEXT NOT NULL,
+                    operation_id TEXT,
+                    payload_digest TEXT,
+                    state TEXT NOT NULL DEFAULT 'pending',
+                    attempts INTEGER NOT NULL DEFAULT 0,
+                    next_attempt REAL NOT NULL DEFAULT 0,
+                    reason TEXT,
+                    receipt_id TEXT REFERENCES feedback(receipt_id),
+                    PRIMARY KEY (bank_id, project_id, caller_scope, source, delivery_key)
+                );
+                CREATE INDEX IF NOT EXISTS hindsight_inbox_pending
+                    ON hindsight_inbox(state, next_attempt);
+                CREATE INDEX IF NOT EXISTS hindsight_inbox_document
+                    ON hindsight_inbox(bank_id, project_id, caller_scope, document_id);
             """)
         # One service instance owns this file. A request left by a previous
         # instance has no recoverable upstream answer.
