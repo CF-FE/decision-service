@@ -184,13 +184,14 @@ class OutcomePublisher:
                 raise PublicationError("publication_inbox_unknown")
 
             status = self.gateway("get_operation", operation)
-            if status.get("state") == "RESPONSE" and status.get("http_status") == 200:
+            if status.get("state") != "RESPONSE":
+                raise PublicationError("publication_operation_unknown")
+            http_status = status.get("http_status")
+            if http_status == 200:
                 body = status.get("body")
                 if not isinstance(body, dict) or body.get("operation_id") != operation:
                     raise PublicationError("publication_operation_mismatch")
                 state = body.get("status")
-                if state not in {"pending", "processing", "completed", "failed", "cancelled"}:
-                    raise PublicationError("publication_operation_unknown")
                 if state == "completed" and isinstance(body.get("completed_at"), str):
                     try:
                         completed = datetime.fromisoformat(body["completed_at"])
@@ -199,8 +200,11 @@ class OutcomePublisher:
                     if (completed.utcoffset() is not None and datetime.now(timezone.utc) - completed >= timedelta(minutes=2)
                             and self.compensate(key, document, path)):
                         return {**result, "state": "compensation_queued"}
-                return {**result, "state": "awaiting_webhook" if state == "completed" else state}
-            if status.get("state") != "RESPONSE" or status.get("http_status") != 404:
+                if state in ("pending", "processing", "completed", "failed", "cancelled"):
+                    return {**result, "state": "awaiting_webhook" if state == "completed" else state}
+                if state != "not_found":
+                    raise PublicationError("publication_operation_unknown")
+            elif http_status != 404:
                 raise PublicationError("publication_operation_unknown")
             if phase != "ready" or not self.set_phase(key, "ready", "intent"):
                 return {**result, "state": "unknown", "reason": "original_operation_not_visible"}
