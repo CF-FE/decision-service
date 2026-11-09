@@ -10,7 +10,7 @@
 | --- | --- | --- | --- |
 | P1 | [#1 日常工作流与角色创建接入](https://github.com/CF-FE/decision-service/issues/1) | 已回读凡人原入口、负责人和检查点，尚无可接入的下一自然单元 | 原负责人确认有新单元和合法分支后，从原协调员入口取得采用、原生模型/强度、结果及验收回执。 |
 | P2 | [#4 基于真实反馈优化决策与模型强度](https://github.com/CF-FE/decision-service/issues/4) | 等待 #1 的自然任务记录 | 以质量、推进、返工和推荐/实际模型配置确定是否有必要调整；仅附现成用量。 |
-| P3 | [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) | 默认关闭的接收、持久 inbox、精确读取、去重及按 ID 补偿已在隔离测试通过 | 目前未观察到凡人结果发布流；启用前确认生产者、读取权限、实际回调及遗漏发现来源。 |
+| P3 | [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) | 凡人单 bank 生产回调已启用，一条真实历史结果完成回收、按 ID 补偿及重启读回 | 发布由受控命令触发。后续工作流自动发布、其他 bank 和全库遗漏发现另行推进。 |
 
 | 已收口 | 完成范围 | 保留的边界 |
 | --- | --- | --- |

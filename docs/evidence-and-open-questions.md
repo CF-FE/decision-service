@@ -55,13 +55,20 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 | 原任务及任职 | [凡人 Issue #2](https://github.com/CF-FE/fanren-work/issues/2) 为 open；[Project #5/item 285760278](https://github.com/orgs/CF-FE/projects/5?pane=issue&itemId=285760278) 为 In Progress。现任负责人为第 1 代，Mac 正式台账与受控原生路由一致；实时 Herdr 绑定/槽位未在桌面开发会话确认。 | 原协调员核实时身份、原动作与未决创建；业务验收归现任负责人。 |
 | P1 真实单元 | `fanren-work` 现场源码 `6fa0982`，现场安装 runner `36e23b4`；用项目只读入口重读 26 个固定检查点，全为 `FINISHED/accepted`，无当前 action，整集未接受。最新原处置未释放新单元：等待原发布/构建证据或可验证的保管者，保留原请求。 | 取得真实新输入后，由负责人限定尚未执行的 `PREPARE_NEW` 单元。原协调员只给出当前合法的运营选项；有合法新执行槽位时，按该宿主可用且获准候选选型、原生启动读回线程/模型，再冻结投递绑定，经原 intent/bind/collect 一次发单。既有 `owner_acceptance` 保持负责人原生决定。 |
 | P2 效果 | 没有本轮自然任务采用、真实质量、返工或推荐/实际配置样本。保留当前问题和配置，尚无证据支持升降档或认定提效；可比 token/耗时未取得。 | 对同一原单元读回两条 application 与共享 result、现有质量和负责人结论；保留原端的 pending/UNKNOWN。 |
-| P3 来源与实现 | 凡人 bank 目录当时为 18 条，未见决策结果发布文档；对一条实际文档按精确 ID 回读，确认可取 `original_text`，该原文是历史流程记忆。对端固定 Hindsight 1.2.0 源码支持 V2 签名回调，现行网关源码允许 `get_document`。本仓隔离验证了跨重启、原回执去重、网关精确读、失败退避、乱序和发布者隔离。 | 明确实际生产者和最小 bank 读取授权、启用单 bank 回调、证明原文读回并从原索引核遗漏。无可信发布者/可用精确索引时继续直传，不能将直传列为自动回收通过。 |
+| P3 来源与实现 | 凡人单 bank 已启用生产回调，完成一条已验收结果的回顾性回收。原生首次回调 `202`，VPS 持久记录结果，同 ID 补偿与重启读回均保持同一回执。 | 试点通过受控命令发布一条真实结果。批量接入、发布自动化及全库遗漏发现仍待具体需求。 |
 
 工作流接入沿 `fanren-work` 原入口。宿主启用及白名单归 Herdr，本仓承接决策和反馈回收。2026-11-09 18:13:26 北京时间，Mac 消费者安装源为 `701cd01b`，26 个安装文件均与固定版本摘要一致。`8612a9a` 对应历史合成工程样例及回退版本，`2df05a48` 对应既有服务发布。本轮凡人状态仍停在负责人释放下一单元之前。[Herdr 部署回执](https://github.com/CF-FE/herdr-4-codexcloud/blob/main/docs/status.md#mac-model-allowlist-deployment)
 
 本次启用覆盖 Mac Codex 新单元创建。生效策略为 rev4，省略 `requirements.models` 和 `requirements.efforts` 时按默认 `gpt-6.1-sol` / `high` 筛选。下一真实单元如果确有选型空间，由原创建者显式提供适用的型号与强度，入口再与宿主能力和白名单取交集。单候选的实际采用只提供配置回执，复杂度匹配效果仍待自然任务反馈。Win 和 Cloud、手工组织角色创建及图像工具调用的覆盖范围见 Herdr 部署回执。
 
 凡人接续证据沿原协调员受控 `coordinator-result-latest.json`（SHA-256 `03f25f2dbf977aaae44393a09bb5c15c59fd8326f58ebd66b88276a3195b1bfb`，观察于 2026-11-09 17:16 北京时间）的 `upstream_source_request` 与 `last_owner_disposition` 查回。原请求仍等待可验证的原件或保管者；发现新证据时沿同一对象续接。
+
+### 凡人单 bank 生产回收（2026-11-09）
+
+- VPS 运行固定提交 `c38f58e2150a3ff59d5115ac6a2b08c2644ca7f1`。发布包 SHA-256 为 `7e2c9f0641ab6fabf91bfd3a4bd16847a81d1ebb7c31f8bb2c414f466699dc68`。首次启动受新虚拟环境目录权限阻挡，自动回切 `2df05a48` 后恢复健康。为新目录修正读取和执行权限，以服务账户验证导入，再使用同一构建重新切换。切换前备份并核验 SQLite，保留旧发布与原配置。
+- 生产试点沿凡人 [Issue #2](https://github.com/CF-FE/fanren-work/issues/2) 已接受的源身份核对单元。验收覆盖两份指定磁盘文件的身份与来源未匹配报告。旧加载映像、官方构建匹配、宿主恢复和整集验收仍未证实。原结果与验收的观察时间保留自 11 月 6 日原生记录，11 月 9 日单列当前回顾关联和发布时间。原单元无历史决策记录，回顾关联为普通单候选、不可执行，模型未调用，账本有一条 result 和零条 application。
+- Win Hindsight 原生异步 retain 的父 operation 和唯一子 operation 均完成。回调标识使用子 operation，事件与发布索引通过精确 document ID 和原文 SHA-256 对账。签名回调首次投递 `202`，VPS inbox 状态为 `recorded`。随后按同 document ID 补偿得到同一回执。受控重启后，公网 HTTP 和 MCP 以同一凡人 scope 读回相同内容，SQLite 对应事件修订仍为一条，原服务的其他 scope 查询该记录为 `404`。
+- 发布者由受控命令签名并冻结精确索引。回调只为凡人 bank 启用，后续结果仍由原生产者按合同发布。回退先禁用该 webhook，再按本次差量还原入口、读取授权和配置，按需切回旧发布。保留现有 SQLite 和原回执。完整 operation、通知、文档、结果和来源哈希见受控发布索引及复核回执。[Decision Service Issue #3](https://github.com/CF-FE/decision-service/issues/3)
 
 ### Q8 备选试验与恢复（2026-11-09）
 
@@ -90,13 +97,13 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 
 上游 [#6242](https://github.com/vectorize-io/hindsight/issues/6242) 的公开复现和 [#6389](https://github.com/vectorize-io/hindsight/pull/6389) 的合并记录证明另一种默认关闭的整批 reranker fallback 已进入上游源码；不证明本机安装、开关启用或本地根因。两方案的具体差异与固定版本见[对照说明](hindsight-decision-models.md#上游整批回退与本地局部拒答方案)。#6 已于 2026-11-09 按技术修复和部署验证完成关闭；拒答原因及历史限流证据缺口作为 UNKNOWN 留档，不为此继续发起请求。剩余工作见[当前优先级](roadmap.md#当前优先级与-issue-状态)。
 
-两条仓内隔离入口使用真实本地 HTTP/SQLite、生成 runner 和上游/宿主替身，覆盖回执丢失、部分 recall 失败、进程中断、配置读回、联合结果及质量修订，见[可复跑命令](development.md)。真实工程样例另有原生回执，不能混用两类证据。模型准确率、整单效率和 token 收益尚无实测结论。Hindsight webhook 已纳入本轮，当前为本地实现与验证，尚待生产接线。公开材料不包含凭据、内部连接细节或私有来源内容。下文带 2026-11-08 日期的章节保留当时调研事实，不代表当前实现状态。
+两条仓内隔离入口使用真实本地 HTTP/SQLite、生成 runner 和上游/宿主替身，覆盖回执丢失、部分 recall 失败、进程中断、配置读回、联合结果及质量修订，见[可复跑命令](development.md)。真实工程样例另有原生回执。模型准确率、整单效率和 token 收益尚无实测结论。单 bank 生产验证另见[凡人回收证据](#凡人单-bank-生产回收2026-11-09)。下文带 2026-11-08 日期的章节保留当时调研事实。
 
 ## Hindsight webhook 与反馈回收补充（2026-11-08）
 
 用户确认当前部署支持 webhook；这是部署能力说明，不是本项目端到端验证。调研覆盖官方 Webhooks、Documents、Bank strategy、Knowledge Pages、Mental Models、Decision Models 与 Extensions；链接、合同差异及设计取舍见[结果回收方案](outcome-feedback.md)。
 
-初始化调研观察到 MCP 可精确读取文档原文，未暴露 webhook 管理及 Documents API 的时间窗口过滤；官方存在这些能力不代表当前适配已具备。启用 Hindsight webhook 回收前必须验证签名、至少一次投递去重、重试耗尽恢复、并发分页覆盖、不可变修订和所有路由的项目读写隔离。原生删除事件覆盖尚未核验，撤回不能只依赖回调。2026-11-08 当时只交付文档；2026-11-09 已实现 MVP 直传，仍未配置 webhook 或写入生产结果；本次专用只读主体的两 bank 授权见当前交付边界。
+初始化调研观察到 MCP 可精确读取文档原文，未暴露 webhook 管理及 Documents API 的时间窗口过滤。凡人试点通过 Win 原生接口注册 webhook，VPS 仍通过网关精确读回。原生删除事件覆盖与全库扫描仍未核验。试点通过既有服务只读主体额外授权凡人 bank，其余 bank 与 mutation 权限沿原配置。
 
 ## 本轮评审的复核与缺口（2026-11-08）
 
@@ -136,4 +143,4 @@ MVP 由适配器自动直传 application（实际采用动作/模型配置或未
 
 评价沿已有测试与原验收，缺少 token、质量或结果保留 UNKNOWN；应用事实、执行结果与业务验收分别记录。多项决策关联同一执行 attempt 时成本只计一次，服务判断 attempt 另计，并发墙钟时间不能相加。应用回收率与已知结束单元的结果回收率分别统计，在途、未知与缺口另列；这些关联与统计不自动证明某次决策带来的因果收益。
 
-唯一详细语义合同为[结果回收与效果验证](outcome-feedback.md)，序列化归[v1 合同](api-contract.md)。上述在 2026-11-08 为讨论设计；2026-11-09 的实现、隔离验证及尚缺真实运行证据见本页“当前交付边界”，不能用旧源码调研或局部测试代替生产验收。
+唯一详细语义合同为[结果回收与效果验证](outcome-feedback.md)，序列化归[v1 合同](api-contract.md)。上述在 2026-11-08 为讨论设计。当前实现、隔离验证与单 bank 生产证据见本页“当前交付边界”。

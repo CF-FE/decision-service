@@ -1,6 +1,6 @@
 # 决策结果回收与效果验证
 
-状态：2026-11-09 直传、SQLite 修订与原端显式补传已实现、部署并通过工程审查。真实 Mac/云端合成工程样例中，工作流选择与模型配置均已采用，共用一个结果事件，第 2 个修订与质量证据可读回，来源端待传为 0。序列化字段归[v1 合同](api-contract.md)，不是 Hindsight 原生合同。尚未证明自然业务效果。P3 的单 bank 回收入口已通过本地隔离测试，默认关闭；凡人生产源、部署配置和真实回调尚未接通。
+状态：2026-11-09 直传、SQLite 修订与原端显式补传已实现并部署。Mac 工程样例的工作流与模型选择共用一个结果事件，第 2 个修订和质量证据可读回，来源端待传为 0。P3 默认关闭，凡人 bank 已显式启用，完成一条真实历史结果的生产回调、按 ID 补偿和重启读回。序列化字段见 [v1 合同](api-contract.md)，试点范围见[运行证据](evidence-and-open-questions.md#凡人单-bank-生产回收2026-11-09)。
 
 ## 0. MVP 自动回传、精确回收与效果验证
 
@@ -118,7 +118,7 @@ document_id = "decision-outcome-v1-" + hashlib.sha256(original_text.encode("utf-
 | `GET /v1/hindsight-outcomes/{bank_id}/{document_id}` | 用原 scope 的 Bearer 查询通知/补偿记录；返回 `pending`、`recorded`、`rejected`、`access_blocked` 或 `retry_exhausted`。反馈和 `recorded` 回执原子提交；`recorded` 不表示业务验收。 |
 | `POST /v1/hindsight-outcomes/{bank_id}/{document_id}` | 同一授权下，用原发布回执或生产者索引给出的精确 ID 补回遗漏通知；`202` 回应带当前 `state` 及是否 `requeued`。相同补偿 ID 可重新排队读权限阻塞或已耗尽的读取；签名不符或修订冲突保留 `rejected`，不会被重排。 |
 
-暂时读取失败按 5/30/120 秒退避，同一 inbox 继续；进程重启恢复未完成项。补偿入口不枚举 bank，也不从 recall 或 webhook 投递历史推断缺失的文档 ID。现有 VPS 网关允许 `get_document`，不允许 Documents 时间窗枚举。若需自动发现完全丢失的通知，最小接法是复用发布者已有的精确文档索引；若没有该索引，再由网关维护者授权原生时间窗枚举，处理重叠窗口和分页漂移。当前未部署该枚举、未登记生产 webhook。
+暂时读取失败按 5/30/120 秒退避，进程重启恢复未完成项。补偿入口接收原发布者索引里的精确文档 ID。现有 VPS 网关允许 `get_document`，全库遗漏发现仍需单独接入发布者索引或获准的时间窗枚举。凡人已登记生产 webhook。该安装版 Hindsight 异步 retain 返回父 operation，回调使用执行该文档的子 operation。保留两者与文档、通知 ID 的对应关系。
 
 ### 接入与演进边界
 
