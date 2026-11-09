@@ -64,7 +64,7 @@ Hindsight recall 用于召回经验；具体结果按原 ID 和引用精确关�
 
 原 workflow/角色创建与执行适配器继续直传应用和结果。对已采用 Hindsight 发布结果的项目，P3 提供 retain.completed webhook → 持久 inbox → get_document 原文 → 发布者和修订校验 → 原反馈账本。无需迁移业务结果库或强制双写。consolidation 完成、抽取完成、业务成功和决策正确必须分开。
 
-用户确认部署支持 webhook，但本服务回调未做端到端测试；现有 MCP 的 webhook 管理和时间窗口枚举能力不足以直接承诺完整同步。详见[完整方案及能力差异](outcome-feedback.md)，其中定义补偿扫描、ACL、评价真值、纠正撤回和防循环。
+凡人单 bank 已通过生产端到端验证，涵盖 Win 原生回调、VPS 精确原文读取、按文档 ID 补偿和重启读回。生产者由受控命令触发。其他 bank、工作流自动发布和全库遗漏发现仍待接入。[回收合同与能力边界](outcome-feedback.md)
 
 ## 内部 Decision Models 与业务决策分层
 
