@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.codex/agent-state/
+dist/
+.env
+.env.*
+/deploy/config.local.json
+*.sqlite3
+*.sqlite3-*
