@@ -32,7 +32,10 @@ def gateway(action, args, state, status, body, **extra):
 
 
 @pytest.mark.parametrize("failure", ["transport", "contradictory-busy"])
-def test_lost_submission_response_reuses_frozen_identity_and_waits_for_real_receipt(tmp_path, failure):
+@pytest.mark.parametrize("missing_http_status", [404, 200])
+def test_lost_submission_response_reuses_frozen_identity_and_waits_for_real_receipt(
+    tmp_path, failure, missing_http_status,
+):
     source = event()
     sends = []
     operation_visible = False
@@ -50,6 +53,11 @@ def test_lost_submission_response_reuses_frozen_identity_and_waits_for_real_rece
             if operation_visible:
                 assert args["operation_id"] == sends[0]["operation_id"]
                 return gateway(action, args, "RESPONSE", 200, {"status": "completed", "operation_id": args["operation_id"]})
+            if missing_http_status == 200:
+                return gateway(action, args, "RESPONSE", 200, {
+                    "operation_id": args["operation_id"], "id": args["operation_id"],
+                    "status": "not_found", "operation_type": None, "created_at": None, "completed_at": None,
+                })
             return gateway(action, args, "RESPONSE", 404, {})
         assert action == "retain"
         sends.append(args)
@@ -73,11 +81,33 @@ def test_lost_submission_response_reuses_frozen_identity_and_waits_for_real_rece
         publisher(tmp_path, upstream).publish(source | {"observed_at": "2026-11-09T11:30:00+08:00"})
 
 
+@pytest.mark.parametrize(("operation_status", "wrong_operation", "reason"), [
+    ("not_found", True, "publication_operation_mismatch"),
+    ("unrecognized", False, "publication_operation_unknown"),
+    (["not_found"], False, "publication_operation_unknown"),
+])
+def test_operation_lookup_must_confirm_the_original_operation(tmp_path, operation_status, wrong_operation, reason):
+    def upstream(req):
+        if req.url.host == "decision.test":
+            return httpx.Response(200, json={"document_id": req.url.path.rsplit("/", 1)[1], "deliveries": []})
+        request = json.loads(req.content)
+        assert request["tool"] == "get_operation"
+        args = request["arguments"]
+        operation_id = "foreign-operation" if wrong_operation else args["operation_id"]
+        return gateway("get_operation", args, "RESPONSE", 200, {
+            "operation_id": operation_id, "status": operation_status,
+        })
+
+    result = publisher(tmp_path, upstream).publish(event())
+    assert result["state"] == "unknown" and result["reason"] == reason
+
+
 @pytest.mark.parametrize("failure", ["native-unsent", "gateway-busy", "gateway-unavailable"])
 def test_confirmed_unsent_retry_and_completed_operation_compensation_use_same_ids(tmp_path, failure):
     source = event()
     sends = []
     compensation = []
+    operation_visible = False
 
     def upstream(req):
         if req.url.host == "decision.test":
@@ -89,10 +119,10 @@ def test_confirmed_unsent_retry_and_completed_operation_compensation_use_same_id
         request = json.loads(req.content)
         action, args = request["tool"], request["arguments"]
         if action == "get_operation":
-            if len(sends) == 2:
+            if operation_visible:
                 return gateway(action, args, "RESPONSE", 200, {"status": "completed", "operation_id": args["operation_id"],
                     "completed_at": (datetime.now(timezone.utc) - timedelta(minutes=3)).isoformat()})
-            return gateway(action, args, "RESPONSE", 404, {})
+            return gateway(action, args, "RESPONSE", 200, {"status": "not_found", "operation_id": args["operation_id"]})
         sends.append(args)
         if len(sends) == 1:
             if failure == "gateway-busy":
@@ -113,6 +143,8 @@ def test_confirmed_unsent_retry_and_completed_operation_compensation_use_same_id
     pub = publisher(tmp_path, upstream)
     assert pub.publish(source)["state"] == "not_submitted"
     assert pub.publish(source)["state"] == "submitted"
+    assert pub.publish(source)["reason"] == "original_operation_not_visible"
+    operation_visible = True
     result = pub.publish(source)
     assert result["state"] == "compensation_queued" and "receipt_id" not in result
     assert sends[0] == sends[1]

@@ -124,7 +124,7 @@ document_id = "decision-outcome-v1-" + hashlib.sha256(original_text.encode("utf-
 
 工作流可将原检查点冻结的 `result` JSON 交给 `python -m decision_service.outcome_publisher --config <private-config>` 的标准输入。配置绑定 `project_id`、`bank_id`、原 `caller_scope`、`producer_secret`、`gateway_url`/`gateway_token`、`decision_service_url`/`decision_service_token`、绝对路径 `state` 和可选 `timeout_seconds`。`state` 指向执行端私有目录里的发布索引 SQLite。网关凭据由发布者持有，只授权目标 bank 的 retain 与对账。服务端继续使用已有的只读凭据。
 
-发布器在首次发送前按服务的共同规则去掉现金用量字段，并冻结每个事件修订的原文、文档 ID 和父 operation ID。同修订的语义输入变更会报冲突。原 operation 受理或完成时，源检查点继续把反馈留在待传状态，直至 Decision Service 返回 `recorded` 和 `receipt_id`。请求结果不明时只查原 operation。网关明确未向上游提交时，下一轮沿相同 ID 和原文重试。若原 operation 完成满两分钟且没有 inbox 记录，或 inbox 读取权限被阻挡或已耗尽重试，按冻结的文档 ID 请求补偿。对同一修订的补偿至少间隔五分钟，`rejected` 保留原拒绝理由。
+发布器在首次发送前按服务的共同规则去掉现金用量字段，并冻结每个事件修订的原文、文档 ID 和父 operation ID。同修订的语义输入变更会报冲突。原 operation 受理或完成时，源检查点继续把反馈留在待传状态，直至 Decision Service 返回 `recorded` 和 `receipt_id`。请求结果不明时只查原 operation。查询返回 HTTP 404，或返回 HTTP 200 且正文的原 operation ID 与 `not_found` 状态均匹配时，只有本地仍可首次发送的修订才提交。网关明确未向上游提交时，下一轮沿相同 ID 和原文重试。若原 operation 完成满两分钟且没有 inbox 记录，或 inbox 读取权限被阻挡或已耗尽重试，按冻结的文档 ID 请求补偿。对同一修订的补偿至少间隔五分钟，`rejected` 保留原拒绝理由。
 
 接入方在业务状态写入之后调用发布器，并在原对账周期重试待传事件。对选择本路径的新单元，应用事件仍可直传，`result` 与后续质量修订走同一 Hindsight 路径。发布完成前的 `unknown`、`submitted` 等状态不生成反馈回执，也不触发业务重跑。已确认未发送和原 operation 仍不可见是两种状态。只有原发布者能用可核原生依据处置长期不可见的发送意图。
 
