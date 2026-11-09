@@ -23,7 +23,20 @@ decision = call_decisions(validated_request, retrieval["evidence"], provider_set
 
 ## OpenAI Decisions 官方返回类型
 
-核验日期：2026-11-09。以下为 OpenAI 原生合同；本服务的规范化输出另见下节，不把两者混用。
+以下为 OpenAI 原生合同；本服务的规范化输出另见下节，不把两者混用。
+
+| 版本与时间 | 记录 |
+| --- | --- |
+| 本节文档版本 | **v1.0**；仅为本仓说明的维护版本，不是 OpenAI API 或模型版本。 |
+| 更新时间 | **2026-11-09 07:05 UTC / 北京时间 2026-11-09 15:05**。 |
+| 官方资料核验日期 | **2026-11-09**；[Decisions 指南](https://developers.openai.com/api/docs/guides/decisions)、[Create decision 参考](https://developers.openai.com/api/reference/resources/decisions/methods/create)和[错误码指南](https://developers.openai.com/api/docs/guides/error-codes)为在线文档，核对页面未标明独立的合同/schema 版本号。不要把本节版本或核验日期当作上游版本号。 |
+| 实现对照基线 | Decision Service [45bf3a9](https://github.com/CF-FE/decision-service/tree/45bf3a99423fe4e5618febe56badccf170eaf126)；Hindsight API Slim **1.2.0** 对照固定上游提交 [34a1386](https://github.com/vectorize-io/hindsight/tree/34a138684a899b6ec34175f7a2b633860466d289)。运行中的安装/补丁状态须另行读回，不能仅凭本文判定。 |
+
+后续变更本节时递增文档版本，更新上述时间、资料核验日期与实现基线，并在下表记录变化；历史内容可按对应 Git 提交追溯。
+
+| 文档版本 | 更新时间 | 变更 |
+| --- | --- | --- |
+| v1.0 | 2026-11-09 07:05 UTC / 北京时间 15:05 | 首次整理四种答案、逐题拒答、批量限制、服务映射和证据边界；增加版本、时间与固定实现基线。 |
 
 ### 请求与响应外壳
 
