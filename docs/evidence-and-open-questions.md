@@ -52,16 +52,14 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 
 | 范围 | 实际回读 | 接续条件 |
 | --- | --- | --- |
-| 原任务及任职 | [凡人 Issue #2](https://github.com/CF-FE/fanren-work/issues/2) 为 open；[Project #5/item 285760278](https://github.com/orgs/CF-FE/projects/5?pane=issue&itemId=285760278) 为 In Progress。现任负责人为第 1 代，Mac 正式台账与受控原生路由一致；实时 Herdr 绑定/槽位未在桌面开发会话确认。 | 原协调员核实时身份、原动作与未决创建；业务验收归现任负责人。 |
-| P1 真实单元 | `fanren-work` 现场源码 `6fa0982`，现场安装 runner `36e23b4`；用项目只读入口重读 26 个固定检查点，全为 `FINISHED/accepted`，无当前 action，整集未接受。最新原处置未释放新单元：等待原发布/构建证据或可验证的保管者，保留原请求。 | 取得真实新输入后，由负责人限定尚未执行的 `PREPARE_NEW` 单元。原协调员只给出当前合法的运营选项；有合法新执行槽位时，按该宿主可用且获准候选选型、原生启动读回线程/模型，再冻结投递绑定，经原 intent/bind/collect 一次发单。既有 `owner_acceptance` 保持负责人原生决定。 |
-| P2 效果 | 没有本轮自然任务采用、真实质量、返工或推荐/实际配置样本。保留当前问题和配置，尚无证据支持升降档或认定提效；可比 token/耗时未取得。 | 对同一原单元读回两条 application 与共享 result、现有质量和负责人结论；保留原端的 pending/UNKNOWN。 |
-| P3 来源与实现 | 凡人单 bank 已启用生产回调，完成一条已验收结果的回顾性回收。原生首次回调 `202`，VPS 持久记录结果，同 ID 补偿与重启读回均保持同一回执。 | 试点通过受控命令发布一条真实结果。批量接入、发布自动化及全库遗漏发现仍待具体需求。 |
+| 原任务及任职 | [凡人 Issue #2](https://github.com/CF-FE/fanren-work/issues/2) 与 [Project #5 条目](https://github.com/orgs/CF-FE/projects/5?pane=issue&itemId=285760278) 沿原任务维护。现任负责人第 1 代已沿原生会话释放一个独立工程核验单元，原协调员准备专用 Mac 槽位。 | 原协调员唯一创建和派发，业务验收归现任负责人。 |
+| P1 真实单元 | 新单元用于核验自动发布工程采用。运营候选为先核发布回执或先核本次执行链，两条路线覆盖相同检查。原创建者按当前 Mac 能力和生效策略冻结同模型低、高两档。 | 固定版本启动后读回实际采用分支、原生模型/强度、工作单元结果及原负责人对该成果的限定验收。 |
+| P2 效果 | 本次待回收同一任务的实际采用、共享结果和验收修订。 | 由负责人记录具体改进或维持理由及下一真实检查点。可比消耗仅附现成证据。 |
+| P3 自动回收 | 凡人单 bank 已完成一条已验收历史结果的回顾性回收。新工作流的收件及验收自动发布已通过隔离联调，结果与质量修订使用同一事件。 | 真实新单元沿原检查点及原跟进对账，读回精确回执后结单。 |
 
-工作流接入沿 `fanren-work` 原入口。宿主启用及白名单归 Herdr，本仓承接决策和反馈回收。2026-11-09 18:13:26 北京时间，Mac 消费者安装源为 `701cd01b`，26 个安装文件均与固定版本摘要一致。`8612a9a` 对应历史合成工程样例及回退版本，`2df05a48` 对应既有服务发布。本轮凡人状态仍停在负责人释放下一单元之前。[Herdr 部署回执](https://github.com/CF-FE/herdr-4-codexcloud/blob/main/docs/status.md#mac-model-allowlist-deployment)
+Mac 使用通过技术复核的固定版本。发布器为 `25742f6`，Herdr 消费者为 `6211709`，两组件均已合并并独立安装。凡人新工作流为 `ec641a1`。隔离联调用实际安装的消费者和发布器贯通签名回调，验证报告收件、负责人质量修订和流程结束后的原事件恢复。隔离结果与本次实际采用分列。[发布器](https://github.com/CF-FE/decision-service/pull/11) · [Herdr 消费者](https://github.com/CF-FE/herdr-4-codexcloud/pull/19) · [凡人工作流](https://github.com/CF-FE/fanren-work/pull/12)
 
-本次启用覆盖 Mac Codex 新单元创建。生效策略为 rev4，省略 `requirements.models` 和 `requirements.efforts` 时按默认 `gpt-6.1-sol` / `high` 筛选。下一真实单元如果确有选型空间，由原创建者显式提供适用的型号与强度，入口再与宿主能力和白名单取交集。单候选的实际采用只提供配置回执，复杂度匹配效果仍待自然任务反馈。Win 和 Cloud、手工组织角色创建及图像工具调用的覆盖范围见 Herdr 部署回执。
-
-凡人接续证据沿原协调员受控 `coordinator-result-latest.json`（SHA-256 `03f25f2dbf977aaae44393a09bb5c15c59fd8326f58ebd66b88276a3195b1bfb`，观察于 2026-11-09 17:16 北京时间）的 `upstream_source_request` 与 `last_owner_disposition` 查回。原请求仍等待可验证的原件或保管者；发现新证据时沿同一对象续接。
+原首集 26 个既有检查点的只读回查为 `FINISHED/accepted`，整集验收及原发布/构建证据仍沿原任务处理。新工程核验独立于这些制作单元。
 
 ### 凡人单 bank 生产回收（2026-11-09）
 
