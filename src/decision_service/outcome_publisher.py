@@ -136,7 +136,9 @@ class OutcomePublisher:
                     and receipt.get("operation_id") == operation and receipt.get("document_id") == arguments["document_id"]
                     and isinstance(trace, dict) and trace.get("operation_id") == operation
                     and trace.get("document_id") == arguments["document_id"]
-                    and trace.get("request_sha256") == sha256(canonical(request_args).encode()).hexdigest()
+                    and trace.get("request_sha256") == sha256(json.dumps(
+                        request_args, sort_keys=True, ensure_ascii=False, allow_nan=False
+                    ).encode()).hexdigest()
                     and isinstance(attempts := trace.get("attempts"), list) and attempts
                     and all(isinstance(attempt, dict) and attempt.get("request_may_have_started") is False
                             for attempt in attempts)):

@@ -8,7 +8,6 @@ import httpx
 import pytest
 
 from decision_service.outcome_publisher import OutcomePublisher, PublicationError, PublisherConfig, main
-from decision_service.storage import canonical
 from test_service import program_event
 
 
@@ -104,7 +103,7 @@ def test_confirmed_unsent_retry_and_completed_operation_compensation_use_same_id
                     "state": "UNAVAILABLE", "operation_id": args["operation_id"], "document_id": args["document_id"],
                 }, "_meta": {"hindsight_gateway": {
                     "operation_id": args["operation_id"], "document_id": args["document_id"],
-                    "request_sha256": sha256(canonical(args).encode()).hexdigest(),
+                    "request_sha256": sha256(json.dumps(args, sort_keys=True, ensure_ascii=False, allow_nan=False).encode()).hexdigest(),
                     "attempts": [{"request_may_have_started": False}, {"request_may_have_started": False}],
                 }}})
             return gateway(action, args, "NOT_SUBMITTED", None, None, request_started=False)
