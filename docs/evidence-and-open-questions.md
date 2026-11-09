@@ -1,6 +1,6 @@
 # 来源、事实与待验证事项
 
-整理日期：2026-11-08；当前交付边界更新于 **2026-11-09 07:40 UTC / 北京时间 15:40**。本次拒答资料说明为 **v1.1**，版本历史见 [Hindsight 说明](hindsight-decision-models.md)。本文区分官方文档口径、设计提案和运行验证；不包含现有私有系统的连接细节或业务数据。
+整理日期：2026-11-08；运行证据记录于 **2026-11-09 07:40 UTC / 北京时间 15:40**，任务状态于 2026-11-09 再按实际交付收口。拒答资料及版本历史见 [Hindsight 说明](hindsight-decision-models.md)。本文区分官方文档口径、设计提案和运行验证；任务记录更新不表示重新探测运行服务，不包含现有私有系统的连接细节或业务数据。
 
 ## OpenAI Decisions API
 
@@ -73,7 +73,7 @@ MVP 回收已有质量与 usage，沿已有测试和原验收，不逐单增加�
 - POST 时间窗口内，Win 日志有两条匹配本题前缀的 recall-start，以及明确的 1/100、10/100 部分拒答告警。告警没有 bank/request 标签，不能将两条拒答数逐一指定给某库；该窗口没有其他可见的外部 recall-start。
 - 本轮没有 retain、反馈或业务工作流写入。原始拒答原因、是否曾限流仍未知；接口没有将 refusal 定义为“证据不足”。上游 [#6242](https://github.com/vectorize-io/hindsight/issues/6242) 与 [#6389](https://github.com/vectorize-io/hindsight/pull/6389) 已记录整次改用备用 reranker 的方案，本轮采用的是用户指定的 Luna 候选级处理。
 
-上游 [#6242](https://github.com/vectorize-io/hindsight/issues/6242) 的公开复现和 [#6389](https://github.com/vectorize-io/hindsight/pull/6389) 的合并记录证明另一种默认关闭的整批 reranker fallback 已进入上游源码；不证明本机安装、开关启用或本地根因。两方案的具体差异与固定版本见[对照说明](hindsight-decision-models.md#上游整批回退与本地局部拒答方案)。#6 继续开放用于原因诊断记录，本轮不追加请求追查原因。
+上游 [#6242](https://github.com/vectorize-io/hindsight/issues/6242) 的公开复现和 [#6389](https://github.com/vectorize-io/hindsight/pull/6389) 的合并记录证明另一种默认关闭的整批 reranker fallback 已进入上游源码；不证明本机安装、开关启用或本地根因。两方案的具体差异与固定版本见[对照说明](hindsight-decision-models.md#上游整批回退与本地局部拒答方案)。#6 已于 2026-11-09 按技术修复和部署验证完成关闭；拒答原因及历史限流证据缺口作为 UNKNOWN 留档，不为此继续发起请求。剩余工作见[当前优先级](roadmap.md#当前优先级与-issue-状态)。
 
 两条仓内隔离入口使用真实本地 HTTP/SQLite、生成 runner 和上游/宿主替身，覆盖回执丢失、部分 recall 失败、进程中断、配置读回、联合结果及质量修订，见[可复跑命令](development.md)。真实工程样例另有原生回执，不能混用两类证据。模型准确率、整单效率和 token 收益尚无实测结论；Hindsight webhook 仍后置。公开材料不包含凭据、内部连接细节或私有来源内容。下文带 2026-11-08 日期的章节保留当时调研事实，不代表当前实现状态。
 

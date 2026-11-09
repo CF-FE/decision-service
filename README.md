@@ -70,7 +70,7 @@ Hindsight 继续负责经验检索；原工作流保留业务状态、产物/验
 
 ## 后续顺序
 
-跑通跨 bank MVP（工作流下一步 + 角色模型配置 + 结果回收） → 接入真实使用 → 根据质量与消耗改善决策、检索和模型强度 → 按需要扩展评测与 Hindsight 回收。
+M1 工程闭环已完成。剩余按 [#1 日常工作流/角色接入](https://github.com/CF-FE/decision-service/issues/1) → [#4 真实反馈迭代](https://github.com/CF-FE/decision-service/issues/4) → 按需 [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) 推进；当前无需配置 webhook。#2/#5/#6 已关闭，完整状态和完成条件见[当前优先级](docs/roadmap.md#当前优先级与-issue-状态)。
 
 原适配器自动回传 application（实际采用）和 result（工作单元结果），按 decision_id 与原执行引用精确关联；人工纠正可补充。原检查点保存待传事件，恢复补传不重跑业务；质量可后补修订，成本去重，缺反馈单列。Hindsight 用于召回经验，不承担找全结果。详见[结果回收与效果验证](docs/outcome-feedback.md)。
 

@@ -1,6 +1,24 @@
 # 路线图与验收
 
-2026-11-08 用户已确认先跑通跨 bank MVP、再从实际使用中迭代；核心目标是提升动态工作流执行效率与模型 token 利用率。2026-11-09 公子进一步要求新开 gpt-6.1-sol 会话并行实现，两个原会话仅审计复核；当前派工与完成等级归[实施安排](implementation-plan.md)，不据此宣称已部署或验收。下列保留整体建设顺序。
+更新日期：2026-11-09。用户已确认先跑通跨 bank MVP、再从实际使用中迭代；核心目标是提升动态工作流执行效率和模型 token 利用率。本轮 M1 的实现、部署、双端插件与原生工程联调已完成；自然业务接入和长期效果仍待推进。当前任务状态归 [Issue 列表](https://github.com/CF-FE/decision-service/issues) 与 [Project #7](https://github.com/orgs/CF-FE/projects/7)，交付依据见[运行证据](evidence-and-open-questions.md#当前交付边界)；[实施安排](implementation-plan.md)保留初始派工历史。
+
+## 当前优先级与 Issue 状态
+
+本表的 P1/P2/P3 表示剩余工作优先级，替代旧 Issue 标题中的阶段编号；M1–M4 仍表示下文的建设阶段。当前没有工程交付阻塞项，列入待办不代表已经开始执行。
+
+| 优先级 | Issue | 当前状态 | 下一步与完成边界 |
+| --- | --- | --- | --- |
+| P1，下一项 | [#1 日常工作流与角色创建接入](https://github.com/CF-FE/decision-service/issues/1) | 待办，M2；生产角色/自然任务尚未切换 | 选定一个日常项目和原生入口，使用合法分支及可用且获准的模型组合，取得自然任务的实际采用、结果和原验收者结论；对账反馈与适用恢复。 |
+| P2，随后 | [#4 基于真实反馈优化决策与模型强度](https://github.com/CF-FE/decision-service/issues/4) | 待办，M3；依赖 #1 的自然任务记录 | 先看质量、推进、返工和模型/强度；按具体问题迭代，确需量化时再做对照，不预建完整标签或遥测平台。 |
+| P3，按需后置 | [#3 Hindsight 自动回收](https://github.com/CF-FE/decision-service/issues/3) | 待办，M4；跨库检索和适配器直传已完成 | 只有需要从 Hindsight 事件自动同步结果时，才做 webhook、持久 inbox、精确读取和去重补偿。当前无需配置 webhook；本方案的结果自动写回尚未实现，启用前另核权限。 |
+
+| 已收口 | 完成范围 | 保留的边界 |
+| --- | --- | --- |
+| [#2 MVP 核心](https://github.com/CF-FE/decision-service/issues/2) | HTTP/MCP、SQLite、Skill、provider 与反馈核心交付 | 实时状态与执行仍归原 workflow/Herdr。 |
+| [#5 部署与工程联调](https://github.com/CF-FE/decision-service/issues/5) | 云端服务、Mac/Cloud 插件与 OAuth、Skill 加载、原生 Harness 工程样例通过 | 自然任务采用及适用恢复转 #1；统一影子期和一键影子恢复已由当前路线替代，不列通用交付要求，也未宣称这些能力已实现或演练。 |
+| [#6 单题拒答传播修复](https://github.com/CF-FE/decision-service/issues/6) | 固定补丁已部署，14 个专项回归和一次真实双库验证通过 | 拒答触发原因、历史限流证据及告警逐库归属仍 UNKNOWN，说明留档；不为未知原因继续发起测试。 |
+
+原来“先完成离线标注/影子评估再部署”的依赖已被用户确认的 MVP 路线替代，原 Issue 描述作为历史保留。此次整理只更新记录，不启动 #1/#4/#3 的实施，也不增加模型调用、生产角色迁移或记忆写入。
 
 不以前置收益证明、频率统计、完整标注集、基线对照或 recall 消融阻塞 MVP。基本联调确认链路能跑通，后续评测帮助改进效果。
 
@@ -8,7 +26,7 @@
 
 ## M1：跑通跨 bank MVP
 
-一个进程、一份判断核心，以 HTTP API 为首版程序入口，按 Agent 实际接入需求提供共用核心的 MCP；交付轻量 Skill 使用规范，Herdr/项目侧交付原流程适配器，插件分发后置。首版持久存储已确定为 SQLite，交付与记录范围见[架构](architecture.md#对外交付物)和 [ADR-002](decisions/002-mvp-deliverables-and-sqlite.md)。最小能力包括：
+已交付一个进程、一份判断核心，以 HTTP API 为程序入口，MCP 共用核心；轻量 Skill、两端插件和 Herdr/项目原流程适配器均已进入本轮交付。首版持久存储使用 SQLite，交付与记录范围见[架构](architecture.md#对外交付物)和 [ADR-002](decisions/002-mvp-deliverables-and-sqlite.md)。最小能力包括：
 
 - 通用 evaluate：受信调用方提交问题、候选与上下文；常用问题保存为预设，不逐场景审批。
 - workflow_next_action：根据任务状态选择下一合法操作、分支或具体调整方案，返回执行器可消费的候选及参数。
@@ -45,7 +63,7 @@ HTTP 暴露 evaluate_decision/get_decision/record_decision_feedback 对应能力
 
 ## M4：扩展接入与 Hindsight 回收
 
-按实际需要增加更多动作/计划候选、模型配置策略、消费者、插件分发和运行可靠性；若首版未接 Agent，MCP 在出现需求时补齐，与 HTTP 共用核心及记录。不要求每项扩展先完成单独收益论证，也不预先建设全部设施。
+按实际需要增加更多动作/计划候选、模型配置策略、消费者和运行可靠性。现有 MCP 与两端插件已交付，后续扩展继续共用 HTTP 核心及记录。不要求每项扩展先完成单独收益论证，也不预先建设全部设施。
 
 MVP 的适配器直传已纳入 M1；以后需要从 Hindsight 自动回收时，再沿[结果回收方案](outcome-feedback.md)增加 webhook、持久 inbox、精确读取与补偿扫描。两条路径复用原语义事件/修订避免重复计量，不能保留关联时同一结果范围只用一条路径。既有项目结果无需迁移或强制双写，不因扩展阻塞不依赖它的调用。
 
@@ -53,4 +71,4 @@ Hindsight 内部 Decision Models 优化由记忆组件维护者处理，不作�
 
 ## 当前范围
 
-本轮已从隔离实现推进到云端部署、Mac 安装和真实工程接入，原审查会话未编写实现或测试代码。服务侧 54 项测试通过，Herdr 侧 359 项通过、4 项既有条件跳过；两条隔离复跑入口仍保留。真实 Luna 判断、原 workflow 分支采用、Mac Codex 模型/强度读回和共享结果修订已核。云端 App、各客户端授权及跨 bank 的完成范围见[交付证据](evidence-and-open-questions.md#当前交付边界)。Hindsight 内部模型与旧密钥保留，新服务凭据独立；原生产角色/任务未切换，webhook 仍后置。工程链路通过不替代 M2 的自然使用或 M3 的效果观察。
+本轮 M1 工程交付已收口，原审查会话未编写实现或测试代码。服务基线 54 项、后续插件专项 8 项、拒答专项 14 项通过；Herdr 359 项通过、4 项既有条件跳过。真实 Luna 判断、原 workflow 分支采用、Mac Codex 模型/强度读回和共享结果修订已核；Win 候选拒答补丁部署后，原 45 秒预算下一次真实双库 evaluate 用时 14.873 秒，同记录读回一致。云端 App、授权、Skill 加载及详细运行范围见[交付证据](evidence-and-open-questions.md#当前交付边界)。原生产角色/自然任务未切换，webhook 仍后置；后续按 #1 → #4 → 按需 #3 推进。
