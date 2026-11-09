@@ -1,12 +1,17 @@
 # Decision Service · 快速决策公共服务
 
-跨项目、跨 Agent 与工作流复用的快速决策服务，拟通过 OpenAI Decisions API 和 Hindsight 跨 bank 检索，为动态工作流选择推进/调整方案，并按任务需求与复杂度选择角色使用的模型及推理强度。
+跨项目、跨 Agent 与工作流复用的快速决策服务，通过 OpenAI Decisions API 和 Hindsight 跨 bank 检索，为动态工作流选择推进/调整方案，并按任务需求与复杂度选择角色使用的模型及推理强度。
 
-> 当前阶段：方案与文档迭代（2026-11-08）。用户已确认先跑通跨 bank MVP、再按实际使用迭代；本轮先不开发。仓库没有运行服务、部署或效果验证；具体接口仍为草案，模型判断不产生用户批准或业务验收。
+> 当前阶段：云端服务与 Mac 消费者已部署（2026-11-09），真实 Luna 判断及 Herdr 独立工程闭环通过。服务侧 54 项测试通过，Herdr 侧 359 项通过、4 项既有条件跳过。云端 Decision Service Cloud 与本地插件均已 OAuth 连接并读回同记录，云端 Skill 已发布；真实跨 bank 仍因 Hindsight 原生 HTTP 500 待修复。三个 gpt-6.1-sol 实现会话负责编码，两个原会话只审计复核。工程回执不等于自然业务验收或效率收益证明。
 
 - [GitHub Project #7](https://github.com/orgs/CF-FE/projects/7)
 - [讨论与决策记录](docs/discussion-record.md)
 - [总体架构与接口草案](docs/architecture.md)
+- [MVP 公共合同 v1](docs/api-contract.md)
+- [并行实施与审计安排](docs/implementation-plan.md)
+- [本地运行与隔离验证](docs/development.md)
+- [OpenAI/Hindsight 接入配置](docs/provider-integration.md)
+- [本地与云端插件安装](docs/plugin-installation.md)
 - [Hindsight 集成与经验闭环](docs/hindsight-integration.md)
 - [Hindsight Decision Models 与 OpenAI 支持边界](docs/hindsight-decision-models.md)
 - [决策结果回收与验证方案](docs/outcome-feedback.md)
@@ -38,12 +43,12 @@
 | --- | --- |
 | 核心 Decision Service | 一个服务进程，提供判断、跨 bank 检索、模型配置选择与反馈记录 |
 | HTTP API | 首版程序入口，供工作流调用决策、查询记录和回传结果 |
-| MCP | 按 Agent 实际接入需求提供相同能力，与 HTTP 共用核心及记录 |
+| MCP | 已实现 Streamable HTTP，与 HTTP 共用核心、身份作用域及记录 |
 | Skill | 首版轻量使用规范：调用时机、事实与候选准备、应用、回退和反馈 |
-| 插件 | 后续打包、安装与分发 MCP 和 Skill |
+| 插件 | 本地 Codex 包及云端原生私有 App 的 Skill 更新包；两端分别安装和授权 |
 | Herdr／项目工作流适配器 | 首版配套交付，在关联仓库维护候选、原动作/配置应用及反馈补传 |
 
-HTTP/MCP 共用 evaluate_decision、get_decision 和 record_decision_feedback 三项核心能力；具体路由和协议绑定仍待实现，当前没有可调用服务。Skill 说明怎样使用这些能力，不另实现决策逻辑。详见[交付边界](docs/architecture.md#对外交付物)。
+HTTP 与 MCP 已实现 evaluate_decision、get_decision 和 record_decision_feedback 三项核心能力，路由与字段归[v1 合同](docs/api-contract.md)。[Skill](skill/decision-service/SKILL.md) 说明怎样使用这些能力，不另实现决策逻辑；安装及原生授权见[插件说明](docs/plugin-installation.md)。详见[交付边界](docs/architecture.md#对外交付物)。
 
 ## 内部存储
 
@@ -51,7 +56,7 @@ HTTP/MCP 共用 evaluate_decision、get_decision 和 record_decision_feedback �
 
 Hindsight 继续负责经验检索；原工作流保留业务状态、产物/验收权威与待回传事件。服务 SQLite 保存已收到的反馈，不替代来源端恢复补传。详细设计归[内部存储与数据归属](docs/architecture.md#内部存储与数据归属)。
 
-运行位置优先考虑现有 VPS，按联调实际连通性选择；Mac 保留 Herdr 协调与执行接续，Windows 保留制作与 Hindsight 后端。MVP 包含适配器自动反馈，插件、Hindsight webhook 与全库补偿等完整设施后续增加。
+服务已部署到现有 VPS，使用独立进程、凭据和持久数据目录；Mac 保留 Herdr 协调与执行接续，Windows 保留制作与 Hindsight 后端。MVP 包含适配器自动反馈；Hindsight webhook 与全库补偿后续增加。
 
 ## 不承担的职责
 
@@ -67,4 +72,4 @@ Hindsight 继续负责经验检索；原工作流保留业务状态、产物/验
 
 原适配器自动回传 application（实际采用）和 result（工作单元结果），按 decision_id 与原执行引用精确关联；人工纠正可补充。原检查点保存待传事件，恢复补传不重跑业务；质量可后补修订，成本去重，缺反馈单列。Hindsight 用于召回经验，不承担找全结果。详见[结果回收与效果验证](docs/outcome-feedback.md)。
 
-基本联调确认链路、实际应用、两类反馈与恢复可用；质量复用原检查/验收，效果对照在使用后完善，不设前置收益证明、统一影子期或逐项批准。详见[路线图](docs/roadmap.md)与[架构](docs/architecture.md)。本轮仅修订文档，未同步看板、开始开发或改变运行权限。
+基本联调确认链路、实际应用、两类反馈与恢复可用；质量复用原检查/验收，效果对照在使用后完善，不设前置收益证明、统一影子期或逐项批准。详见[路线图](docs/roadmap.md)、[架构](docs/architecture.md)与[本轮分工](docs/implementation-plan.md)。实现、隔离联调、实际运行及业务验收分别记录，不因派工或代码完成声称生产已接通。
