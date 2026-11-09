@@ -39,6 +39,16 @@ Hindsight Decision Models 是可选的内部判断层：辅助筛选记忆、辨
 
 OpenAI 官方指南当前使用 `POST /v1/decisions`、`gpt-6-luna`，提供 predicate、choice、score 等有限答案类型；SDK 使用 `client.decisions.create(...)`。[4] 实施时锁定 SDK/服务版本，再核对合同与账户可用性。
 
+## 逐题拒答与 Hindsight 安装版行为
+
+2026-11-09 核对的 OpenAI 原生 `answers[]` 有 **predicate、choice、score、refusal** 四种返回类型。任一题可返回 `{"type":"refusal","name":"问题名"}`，其他题仍可有正常答案；未命名时 `name=null`。官方只定义拒答分支的 `name/type`，未给出原因字段或触发规则。完整字段、概率/评分语义、批量限制及 Decision Service 的规范化映射见[官方返回类型说明](provider-integration.md#openai-decisions-官方返回类型)。[5]
+
+安装版所对应的固定上游源码 `34a138684a899b6ec34175f7a2b633860466d289` 中，`_from_openai()` 遍历答案，遇到任一 refusal 就抛 `DecisionRefusedError`，没有返回已解析的正常答案。[6] 因此本次 recall 整体 500 是已确认的 **Hindsight 适配/排序链路传播行为**，不能表述为 OpenAI 要求整批失败。HTTP 错误、超时、明确拒答和合法低分必须分别诊断；当前证据仍不能确认拒答的原始原因或是否曾有限流。
+
+[Issue #6](https://github.com/CF-FE/decision-service/issues/6) 跟踪的修复方向是在 **recall 排序责任边界** 显式保留拒答状态并排除对应候选，其余正常答案继续使用；全部拒答仍失败/未知，不伪造为零分或有效空结果。不能仅吞掉异常后让未评分候选继续获得名次分，也不改变 consolidation/reflect 的严格拒答语义。这是修复要求，不是已发布或已部署的能力。
+
+源码仍属 `vectorize-io/hindsight`；Win 补丁、部署和回退材料归 `CF-FE/herdr-4-codexcloud` 的 `mcp/hindsight-memory`，VPS 网关归 `ghyghoo8/create-network-sh`。本仓记录消费端现象、合同与验收，不复制 Hindsight 排序器。此文档补充不改变 provider、模型、并发、权限或运行配置。
+
 ## 2026-11-08 首次启用配置
 
 本次在原实例选用以下非秘密配置，普通 LLM、embedding 及原 Q8 精排配置保留：
@@ -96,3 +106,5 @@ Decision Models 可优化记忆处理成本，但不是 ground truth、审批或
 2. [Hindsight Models：OpenAI Decisions](https://hindsight.vectorize.io/developer/models#openai-decisions)
 3. [Hindsight Configuration：Decision model](https://hindsight.vectorize.io/developer/configuration#decision-model)
 4. [OpenAI Decisions API 指南](https://developers.openai.com/api/docs/guides/decisions)
+5. [OpenAI Decisions 请求与返回 schema](https://developers.openai.com/api/reference/resources/decisions/methods/create)
+6. [Hindsight 固定版本 `_from_openai` 拒答处理](https://github.com/vectorize-io/hindsight/blob/34a138684a899b6ec34175f7a2b633860466d289/hindsight-api-slim/hindsight_api/engine/decision_model.py#L162-L178)

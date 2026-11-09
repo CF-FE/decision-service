@@ -163,4 +163,6 @@ settings 是仅在进程内使用的映射：openai_base_url/openai_api_key/open
 
 其中 model 的实际型号以 provider 可读回值为准；未返回实际型号时 `model=null`、configuration_status=unconfirmed，requested_model 保留请求型号。S 将此对象保存为 decision_model。answer 的四种规范形状为：choice 使用上例（choice 的值就是 candidate_id）；predicate 为 `{"type":"predicate","probability":0.8}`；score 为 `{"type":"score","score":0.8,"probabilities":[{"value":0,"probability":0.2},{"value":1,"probability":0.8}]}`，value 是输入 levels 的零基索引；refusal 为 `{"type":"refusal","reason":"provider_refusal"}`。这是本服务规范化输出，P 对官方返回做转换；refusal 对应 status=refused，普通上游失败对应 status=unavailable、answer=null。不能把 score 的加权索引改成候选选择或可靠性保证。
 
+OpenAI 原生 refusal 只有 `name/type`；这里的 `reason=provider_refusal` 是服务自己的分类，不代表已知上游拒答原因。原生四种返回的字段、逐题拒答、概率和 `confidence` 的边界，以及 provider 状态到对外决策记录的映射，见[上游返回类型说明](provider-integration.md#openai-decisions-官方返回类型)。本节不因该说明增加或改变 v1 字段。
+
 P 不承担调用者授权、业务状态或存储；S 不再次实现网络 provider。内部结构如需调整，两个实现者先向审查会话说明影响并同步此处，禁止在不同会话悄悄维持两套函数合同。

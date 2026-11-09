@@ -11,6 +11,7 @@
 - [并行实施与审计安排](docs/implementation-plan.md)
 - [本地运行与隔离验证](docs/development.md)
 - [OpenAI/Hindsight 接入配置](docs/provider-integration.md)
+- [OpenAI Decisions 返回类型与 refusal 语义](docs/provider-integration.md#openai-decisions-官方返回类型)
 - [本地与云端插件安装](docs/plugin-installation.md)
 - [Hindsight 集成与经验闭环](docs/hindsight-integration.md)
 - [Hindsight Decision Models 与 OpenAI 支持边界](docs/hindsight-decision-models.md)
