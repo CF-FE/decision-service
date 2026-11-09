@@ -1,0 +1,18 @@
+{
+  "name": "decision-service",
+  "version": "0.1.0",
+  "description": "Evaluate bounded decisions, read back decision records, and report observed outcomes.",
+  "author": {"name": "CF-FE"},
+  "repository": "https://github.com/CF-FE/decision-service",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Decision Service",
+    "shortDescription": "有限决策与结果回传",
+    "longDescription": "在给定候选、命题或评分等级内获取决策，查回原记录，并从原执行器回传实际采用和结果。",
+    "developerName": "CF-FE",
+    "category": "Productivity",
+    "capabilities": ["Read", "Write"],
+    "defaultPrompt": "帮我在给定候选内评估下一步，并保留决策记录。"
+  }
+}
